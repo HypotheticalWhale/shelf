@@ -128,7 +128,7 @@ func main() {
 		log.Printf("catalogue now holds %d games", total)
 	}
 	log.Printf("requested=%d fetched=%d written=%d skipped=%d in %s",
-		res.Requested, res.Fetched, res.Written, res.Skipped, started.Round(time.Second))
+		res.Requested, res.Fetched, res.Written, res.Skipped, time.Since(started).Round(time.Second))
 
 	if err != nil {
 		// Partial progress is still progress — report the failure but do not
