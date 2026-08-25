@@ -16,7 +16,7 @@ export default async function PeoplePage() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="shell py-12">
       <header>
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-meeple-teal">
           The community
@@ -44,7 +44,7 @@ export default async function PeoplePage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {active.map((c, i) => (
             <CollectorCard key={c.user.id} collector={c} index={i} />
           ))}

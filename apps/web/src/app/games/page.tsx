@@ -31,7 +31,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
   const lastPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
+    <div className="shell py-10">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display font-800 text-4xl tracking-[-0.03em]">
@@ -53,7 +53,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
           </p>
         </div>
       ) : (
-        <div className="mt-7 grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-7 grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {result.games.map((game, i) => (
             <GameCard key={game.slug} game={game} index={i} />
           ))}

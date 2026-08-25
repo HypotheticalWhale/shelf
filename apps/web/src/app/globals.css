@@ -41,6 +41,24 @@ html {
   background: var(--color-felt-950);
 }
 
+/*
+  The page shell.
+
+  Every full-width surface uses this so the header, the content and the footer
+  line up. They had drifted — the bar was capped at 1280px while pages were
+  capped at 1152px — which left the content visibly narrower than the bar above
+  it and a lot of unused screen either side.
+
+  Long-form reading deliberately does not use this: prose gets a narrow measure
+  because a 1400px line is unreadable.
+*/
+@utility shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+  padding-inline: 1.25rem;
+}
+
 body {
   background:
     radial-gradient(120% 80% at 50% -10%, var(--color-felt-800) 0%, transparent 60%),

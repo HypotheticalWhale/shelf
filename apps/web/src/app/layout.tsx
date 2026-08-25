@@ -44,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <main className="relative z-10 flex-1">{children}</main>
           </LiveScoresProvider>
           <footer className="relative z-10 border-t border-rule-soft mt-24">
-            <div className="mx-auto max-w-6xl px-5 py-8 flex flex-wrap gap-x-6 gap-y-2 items-baseline justify-between text-sm text-chalk-faint">
+            <div className="shell py-8 flex flex-wrap gap-x-6 gap-y-2 items-baseline justify-between text-sm text-chalk-faint">
               <p className="font-mono text-xs uppercase tracking-[0.18em]">
                 Shelf
               </p>

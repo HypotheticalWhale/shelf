@@ -21,7 +21,7 @@ export default async function ProfilePage({ params }: PageProps<"/u/[username]">
   const owned = shelf.filter((item) => item.status === "owned");
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-12">
+    <div className="shell max-w-5xl py-12">
       <header className="flex items-start gap-5">
         {user.avatarUrl ? (
           // Clerk avatars are already sized; a plain img avoids a loader round trip.

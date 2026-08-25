@@ -224,7 +224,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
             pointerEvents: reduced ? "auto" : cataloguePointer,
             willChange: "transform, opacity",
           }}
-          className="absolute inset-x-0 top-[5%] z-20 mx-auto w-full max-w-7xl px-5 sm:top-[6%] sm:px-6"
+          className="shell absolute inset-x-0 top-[5%] z-20 sm:top-[6%]"
         >
           <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
             <div>

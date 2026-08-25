@@ -40,7 +40,7 @@ export default async function MyShelfPage() {
     owned.shelf.length + wishlist.shelf.length + rated.ratings.length;
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="shell py-12">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-meeple-teal">

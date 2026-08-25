@@ -33,7 +33,7 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
   ].filter(([, value]) => Boolean(value)) as [string, string][];
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
+    <div className="shell py-10">
       <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
         <div className="lg:sticky lg:top-8 lg:self-start">
           <GameCover

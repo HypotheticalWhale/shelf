@@ -15,7 +15,7 @@ export default async function HomePage() {
       <LandingExperience games={top.games} />
 
       {feed.posts.length > 0 && (
-        <section className="mx-auto max-w-6xl px-5 pt-16">
+        <section className="shell pt-16">
           <header className="flex items-baseline justify-between gap-4">
             <h2 className="font-display font-700 text-2xl tracking-[-0.02em]">
               From the shelves
