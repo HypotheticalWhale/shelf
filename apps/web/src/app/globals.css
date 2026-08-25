@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+/*
+  Shelf's visual system: a game table.
+
+  The ground is deep table felt rather than the usual near-black, and the
+  accents are the six player colours every euro game ships with — the palette
+  board gamers already read fluently. Score colour runs red → amber → teal
+  rather than red → green, so the ramp survives the most common colour vision
+  deficiencies.
+*/
+
+@theme {
+  --color-felt-950: #08150F;
+  --color-felt-900: #0C1D16;
+  --color-felt-800: #11291F;
+  --color-felt-700: #17362A;
+  --color-felt-600: #1F4534;
+  --color-rule: #22503C;
+  --color-rule-soft: #1A3E2E;
+
+  --color-chalk: #F3F0E6;
+  --color-chalk-dim: #A6B7AB;
+  --color-chalk-faint: #6E8377;
+
+  --color-meeple-red: #E25642;
+  --color-meeple-amber: #F0A73E;
+  --color-meeple-teal: #35B8A0;
+  --color-meeple-blue: #4E93DC;
+  --color-meeple-violet: #A07DE6;
+  --color-meeple-pink: #E27BA8;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --radius-cube: 3px;
+}
+
+html {
+  background: var(--color-felt-950);
+}
+
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--color-felt-800) 0%, transparent 60%),
+    var(--color-felt-950);
+  color: var(--color-chalk);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Felt has a texture. One subtle noise layer keeps the large dark areas from
+   reading as flat digital black. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--color-meeple-amber);
+  color: var(--color-felt-950);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-meeple-amber);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Long-form post bodies. */
+.prose-shelf {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--color-chalk);
+}
+.prose-shelf > * + * { margin-top: 1.1em; }
+.prose-shelf h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2em;
+  letter-spacing: -0.02em;
+}
+.prose-shelf h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.6em;
+}
+.prose-shelf a {
+  color: var(--color-meeple-amber);
+  text-underline-offset: 3px;
+  text-decoration: underline;
+}
+.prose-shelf ul, .prose-shelf ol { padding-left: 1.3em; }
+.prose-shelf ul { list-style: square; }
+.prose-shelf ol { list-style: decimal; }
+.prose-shelf li + li { margin-top: 0.35em; }
+.prose-shelf blockquote {
+  border-left: 2px solid var(--color-meeple-teal);
+  padding-left: 1em;
+  color: var(--color-chalk-dim);
+  font-style: italic;
+}
+.prose-shelf code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-felt-700);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+.prose-shelf hr { border-color: var(--color-rule); margin: 2em 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

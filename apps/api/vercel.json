@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/cron/refresh-stats", "schedule": "0 * * * *" },
+    { "path": "/cron/import?limit=150", "schedule": "0 4 * * 1" }
+  ]
+}

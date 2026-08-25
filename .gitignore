@@ -1,0 +1,36 @@
+# Environment — never commit secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# Go
+apps/api/bin/
+*.exe
+*.test
+*.out
+
+# Vercel
+.vercel
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+
+# Clerk CLI local state
+.clerk/
+
+# Local dev database (Postgres binaries + data)
+.devdb/
+
+# Playwright artifacts
+.playwright-mcp/
