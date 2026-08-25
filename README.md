@@ -93,13 +93,40 @@ job, because the numbers cannot drift. `C` is refreshed hourly by cron.
 token issued when you register an application; unauthenticated requests return
 401 regardless of user agent.
 
-Shelf therefore ships a small hand-curated catalogue (65 well-known games:
-titles, years, player counts, playtimes, designers, tags) so the site is usable
-immediately and local development never depends on an external API. Those rows
-are marked `source = 'seed'`.
+Shelf therefore ships a hand-curated catalogue of 65 well-known games so the
+site is usable immediately and local development never depends on an external
+API. Those rows are marked `source = 'seed'`.
 
-To import the real thing, register at
-<https://boardgamegeek.com/using_the_xml_api>, set `BGG_API_TOKEN`, then:
+Titles, years, player counts, playtimes, designers, categories and mechanics are
+accurate. **Complexity weights are close community-consensus figures on BGG's
+1–5 scale, not exact values** — good enough to sort and filter by, and
+overwritten the moment a real import runs.
+
+**Cover art is deliberately absent.** Box art is copyrighted and there is no
+freely-licensed bulk source: Wikipedia's covers are non-free fair-use files
+whose licence does not extend to this site, and Wikidata's board game images are
+often photos of components rather than boxes. The UI draws a typographic cover
+from each game's initials instead, and real art arrives with a BGG token.
+
+Every seeded `bgg_id` is cross-checked against Wikidata's BoardGameGeek ID
+property, because a wrong id would not fail loudly — it would quietly overwrite
+a game with a different game's data on the next import:
+
+```bash
+SEED_VERIFY=1 go test ./internal/seed -run Wikidata -v
+```
+
+To import the real thing — box art, exact weights, full tagging — you need a
+BGG token. **Approval is manual and takes a few days**, so start it early:
+
+1. Sign in at <https://boardgamegeek.com/using_the_xml_api> and create a new
+   application.
+2. Wait for the approval mail from `api@boardgamegeek.com`.
+3. Return to the applications page and create a token for that application.
+4. `vercel env add BGG_API_TOKEN production --value <token>` on `shelf-api`,
+   and add it to `.env.local` for local runs.
+
+Then:
 
 ```bash
 cd apps/api
