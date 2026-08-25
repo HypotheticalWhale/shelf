@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   motion,
   useReducedMotion,
@@ -11,7 +11,7 @@ import {
 } from "motion/react";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
-import { formatYear, playerRange } from "@/lib/format";
+import { formatYear, playerRange, scoreColor } from "@/lib/format";
 import type { Game } from "@/lib/types";
 
 /**
@@ -216,57 +216,91 @@ export function LandingExperience({ games }: { games: Game[] }) {
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {shown.map((game, i) => (
-              <motion.div
-                key={game.slug}
-                initial={reduced ? false : { opacity: 0, y: 80 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08, type: "spring", stiffness: 100 }}
-                className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:-translate-y-2 hover:bg-white/[0.07]"
-              >
-                <Link href={`/games/${game.slug}`} className="block">
-                  <div className="relative aspect-[4/5] overflow-hidden">
-                    <GameCover
-                      name={game.name}
-                      slug={game.slug}
-                      src={game.thumbnailUrl}
-                      className="absolute inset-0 size-full"
-                      full
-                    />
-                    {game.numRatings > 0 && (
-                      <div className="absolute right-4 top-4 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-white">
-                        {game.score.toFixed(1)}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-
-                <div className="p-4">
-                  <Link href={`/games/${game.slug}`}>
-                    <h3 className="truncate font-bold text-white transition-colors group-hover:text-amber-300">
-                      {game.name}
-                    </h3>
-                  </Link>
-
-                  <div className="mt-2 flex justify-between gap-2 text-xs text-white/35">
-                    <span className="truncate">
-                      {playerRange(game.minPlayers, game.maxPlayers) ?? "—"}
-                    </span>
-                    <span>{formatYear(game.yearPublished) ?? ""}</span>
-                  </div>
-
-                  <RatingPips
-                    slug={game.slug}
-                    viewerRating={game.viewerRating}
-                    className="mt-3"
-                  />
-                </div>
-              </motion.div>
+              <LandingGameCard key={game.slug} game={game} index={i} reduced={reduced} />
             ))}
           </div>
         </motion.section>
       </div>
     </div>
+  );
+}
+
+/**
+ * A game on the landing catalogue.
+ *
+ * Holds its own copy of the game so a rating updates the card in place. Without
+ * that the pips filled but nothing else moved — no score appeared, no count
+ * changed — so rating here looked like it had done nothing at all.
+ */
+function LandingGameCard({
+  game: initial,
+  index,
+  reduced,
+}: {
+  game: Game;
+  index: number;
+  reduced: boolean | null;
+}) {
+  const [game, setGame] = useState(initial);
+
+  return (
+    <motion.div
+      initial={reduced ? false : { opacity: 0, y: 80 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.08, type: "spring", stiffness: 100 }}
+      className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:-translate-y-2 hover:bg-white/[0.07]"
+    >
+      <Link href={`/games/${game.slug}`} className="block">
+        <div className="relative aspect-[4/5] overflow-hidden">
+          <GameCover
+            name={game.name}
+            slug={game.slug}
+            src={game.thumbnailUrl}
+            className="absolute inset-0 size-full"
+            full
+          />
+        </div>
+      </Link>
+
+      <div className="p-4">
+        <Link href={`/games/${game.slug}`}>
+          <h3 className="truncate font-bold text-white transition-colors group-hover:text-amber-300">
+            {game.name}
+          </h3>
+        </Link>
+
+        <div className="mt-2 flex items-baseline justify-between gap-2 text-xs text-white/35">
+          <span className="truncate">
+            {playerRange(game.minPlayers, game.maxPlayers) ?? "—"}
+          </span>
+          <span>{formatYear(game.yearPublished) ?? ""}</span>
+        </div>
+
+        {/* The score, so a rating visibly lands. */}
+        <p className="mt-2 font-mono text-sm">
+          {game.numRatings > 0 ? (
+            <>
+              <span style={{ color: scoreColor(game.score) }} className="font-bold">
+                {game.score.toFixed(1)}
+              </span>
+              <span className="ml-1.5 text-[11px] text-white/30">
+                {game.numRatings} {game.numRatings === 1 ? "rating" : "ratings"}
+              </span>
+            </>
+          ) : (
+            <span className="text-[11px] text-white/30">not rated yet</span>
+          )}
+        </p>
+
+        <RatingPips
+          slug={game.slug}
+          viewerRating={game.viewerRating}
+          onRated={setGame}
+          className="mt-2.5"
+        />
+      </div>
+    </motion.div>
   );
 }
 
