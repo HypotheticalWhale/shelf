@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PenLine } from "lucide-react";
 import { Suspense } from "react";
 import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { SearchField } from "./search-field";
@@ -6,7 +7,7 @@ import { SearchField } from "./search-field";
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-felt-950/80 backdrop-blur-sm">
-      <div className="mx-auto max-w-6xl px-5 h-16 flex items-center gap-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-5 lg:gap-6">
         <Link href="/" className="group flex items-center gap-2.5 shrink-0">
           <ShelfMark />
           <span className="font-display text-xl font-800 tracking-[-0.03em]">
@@ -14,7 +15,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden sm:flex items-center gap-5 text-sm text-chalk-dim">
+        <nav className="hidden items-center gap-4 text-sm text-chalk-dim lg:flex">
           <Link href="/games" className="hover:text-chalk transition-colors">
             Browse
           </Link>
@@ -31,12 +32,17 @@ export function SiteHeader() {
           </Show>
         </nav>
 
-        <div className="flex-1 min-w-0">
-          {/* SearchField reads useSearchParams, which opts any page containing
-              it out of static rendering. The header sits in the root layout, so
-              without this boundary every static page — including 404 — fails to
-              prerender. */}
-          <Suspense fallback={<div className="h-8" />}>
+        {/*
+          Search gets the middle of the bar rather than a corner: with tens of
+          thousands of games it is the main way in, and it answers in place.
+
+          SearchField reads useSearchParams, which opts any page containing it
+          out of static rendering. The header sits in the root layout, so
+          without this boundary every static page — including 404 — fails to
+          prerender.
+        */}
+        <div className="mx-auto min-w-0 max-w-xl flex-1">
+          <Suspense fallback={<div className="h-9" />}>
             <SearchField />
           </Suspense>
         </div>
@@ -45,8 +51,9 @@ export function SiteHeader() {
           <Show when="signed-in">
             <Link
               href="/write"
-              className="hidden sm:inline-flex text-sm text-chalk-dim hover:text-chalk transition-colors"
+              className="hidden items-center gap-1.5 rounded-full border border-rule-soft px-3 py-1.5 text-sm text-chalk-dim transition-colors hover:border-rule hover:text-chalk sm:inline-flex"
             >
+              <PenLine className="size-3.5" aria-hidden />
               Write
             </Link>
             <UserButton
