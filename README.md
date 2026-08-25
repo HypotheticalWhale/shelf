@@ -145,5 +145,10 @@ Run migrations once against production with `DATABASE_URL=… go run ./cmd/migra
 or set `MIGRATE_ON_BOOT=1` and let the API migrate itself (an advisory lock makes
 concurrent boots safe).
 
-`apps/api/vercel.json` registers two crons: refresh the global mean hourly, and
+`apps/api/vercel.json` registers two crons: refresh the global mean daily, and
 refresh catalogue metadata weekly.
+
+Vercel's Hobby plan allows at most one cron run per day, which is why the mean
+is refreshed daily rather than hourly. It moves slowly, and scores are computed
+at query time from the stored value, so nothing is stale in between. On Pro,
+tightening `0 3 * * *` to `0 * * * *` is the only change needed.
