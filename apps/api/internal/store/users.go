@@ -211,6 +211,10 @@ func (s *Store) ListCollectors(ctx context.Context, limit, offset int) ([]Collec
 			return nil, fmt.Errorf("scan collector: %w", err)
 		}
 
+		// A person who owns nothing yields NULL arrays from the lateral join,
+		// which marshals as JSON null and breaks any caller that treats the
+		// field as a list. Always send an array.
+		c.ShelfPeek = []Game{}
 		for i := range slugs {
 			g := Game{Slug: slugs[i], Name: names[i]}
 			if i < len(thumbs) && thumbs[i] != "" {

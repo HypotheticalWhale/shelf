@@ -20,7 +20,9 @@ export function CollectorCard({
   index?: number;
 }) {
   const reduced = useReducedMotion();
-  const { user, ownedCount, ratedCount, postCount, avgRating, shelfPeek } = collector;
+  const { user, ownedCount, ratedCount, postCount, avgRating } = collector;
+  // Defensive: an older API build can still send null here.
+  const shelfPeek = collector.shelfPeek ?? [];
   const name = user.displayName || user.username;
 
   return (
