@@ -18,6 +18,9 @@ export function SiteHeader() {
           <Link href="/games" className="hover:text-chalk transition-colors">
             Browse
           </Link>
+          <Link href="/people" className="hover:text-chalk transition-colors">
+            People
+          </Link>
           <Link href="/posts" className="hover:text-chalk transition-colors">
             Reading
           </Link>

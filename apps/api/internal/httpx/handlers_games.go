@@ -29,16 +29,17 @@ func (s *Server) handleListGames(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 
 	page, err := s.store.ListGames(r.Context(), store.GameFilter{
-		Query:     q.Get("q"),
-		Mechanic:  q.Get("mechanic"),
-		Players:   queryInt(r, "players"),
-		MaxTime:   queryInt(r, "maxTime"),
-		MinWeight: queryFloat(r, "minWeight"),
-		MaxWeight: queryFloat(r, "maxWeight"),
-		Sort:      q.Get("sort"),
-		Limit:     queryInt(r, "limit"),
-		Offset:    queryInt(r, "offset"),
-		ViewerID:  auth.UserID(r.Context()),
+		Query:        q.Get("q"),
+		Mechanic:     q.Get("mechanic"),
+		DetailedOnly: q.Get("detailed") == "1",
+		Players:      queryInt(r, "players"),
+		MaxTime:      queryInt(r, "maxTime"),
+		MinWeight:    queryFloat(r, "minWeight"),
+		MaxWeight:    queryFloat(r, "maxWeight"),
+		Sort:         q.Get("sort"),
+		Limit:        queryInt(r, "limit"),
+		Offset:       queryInt(r, "offset"),
+		ViewerID:     auth.UserID(r.Context()),
 	})
 	if err != nil {
 		fail(w, err)

@@ -144,3 +144,82 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (User, error) {
 	}
 	return u, nil
 }
+
+// Collector is a person plus enough of their shelf to show a preview.
+type Collector struct {
+	User       User    `json:"user"`
+	OwnedCount int     `json:"ownedCount"`
+	RatedCount int     `json:"ratedCount"`
+	PostCount  int     `json:"postCount"`
+	AvgRating  float64 `json:"avgRating"`
+	ShelfPeek  []Game  `json:"shelfPeek"`
+}
+
+// ListCollectors returns people who have started a collection, busiest first.
+//
+// The preview games come from a lateral join rather than a follow-up query per
+// person, so the directory stays one round trip however many people are listed.
+func (s *Store) ListCollectors(ctx context.Context, limit, offset int) ([]Collector, error) {
+	if limit <= 0 || limit > 60 {
+		limit = 24
+	}
+
+	const sql = `
+		SELECT u.id, u.username, u.display_name, u.avatar_url, u.bio, u.created_at,
+		       COALESCE(o.n, 0)  AS owned,
+		       COALESCE(r.n, 0)  AS rated,
+		       COALESCE(p.n, 0)  AS posts,
+		       COALESCE(r.avg, 0) AS avg_rating,
+		       COALESCE(peek.games, '{}') AS peek_slugs,
+		       COALESCE(peek.names, '{}') AS peek_names,
+		       COALESCE(peek.thumbs, '{}') AS peek_thumbs
+		  FROM users u
+		  LEFT JOIN (SELECT user_id, count(*) n FROM shelf_items WHERE status = 'owned' GROUP BY user_id) o
+		         ON o.user_id = u.id
+		  LEFT JOIN (SELECT user_id, count(*) n, avg(value) avg FROM ratings GROUP BY user_id) r
+		         ON r.user_id = u.id
+		  LEFT JOIN (SELECT user_id, count(*) n FROM posts WHERE published_at IS NOT NULL GROUP BY user_id) p
+		         ON p.user_id = u.id
+		  LEFT JOIN LATERAL (
+		        SELECT array_agg(g.slug ORDER BY si.created_at DESC) AS games,
+		               array_agg(g.name ORDER BY si.created_at DESC) AS names,
+		               array_agg(COALESCE(g.thumbnail_url, '') ORDER BY si.created_at DESC) AS thumbs
+		          FROM (SELECT game_id, created_at FROM shelf_items
+		                 WHERE user_id = u.id AND status = 'owned'
+		                 ORDER BY created_at DESC LIMIT 12) si
+		          JOIN games g ON g.id = si.game_id
+		  ) peek ON true
+		 ORDER BY (COALESCE(o.n,0) + COALESCE(r.n,0) + COALESCE(p.n,0)) DESC, u.created_at DESC
+		 LIMIT $1 OFFSET $2`
+
+	rows, err := s.pool.Query(ctx, sql, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("list collectors: %w", err)
+	}
+	defer rows.Close()
+
+	out := []Collector{}
+	for rows.Next() {
+		var c Collector
+		var slugs, names, thumbs []string
+		if err := rows.Scan(
+			&c.User.ID, &c.User.Username, &c.User.DisplayName, &c.User.AvatarURL,
+			&c.User.Bio, &c.User.CreatedAt,
+			&c.OwnedCount, &c.RatedCount, &c.PostCount, &c.AvgRating,
+			&slugs, &names, &thumbs,
+		); err != nil {
+			return nil, fmt.Errorf("scan collector: %w", err)
+		}
+
+		for i := range slugs {
+			g := Game{Slug: slugs[i], Name: names[i]}
+			if i < len(thumbs) && thumbs[i] != "" {
+				t := thumbs[i]
+				g.ThumbnailURL = &t
+			}
+			c.ShelfPeek = append(c.ShelfPeek, g)
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}

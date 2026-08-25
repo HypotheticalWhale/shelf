@@ -253,7 +253,11 @@ func (s *Store) InsertNewGames(ctx context.Context, games []GameInput, progress 
 		batch := pending[start:end]
 
 		var sb strings.Builder
+		// Keep this list in step with the placeholder count and the argument
+		// order below — they drifted apart once already, and the mismatch only
+		// surfaced the next time there was actually a new row to insert.
 		sb.WriteString(`INSERT INTO games (bgg_id, slug, name, year_published,
+			thumbnail_url, bgg_rank,
 			min_players, max_players, min_playtime, max_playtime,
 			designers, categories, mechanics, source, imported_at) VALUES `)
 

@@ -19,7 +19,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
     limit: String(PAGE_SIZE),
     offset: String((page - 1) * PAGE_SIZE),
   });
-  for (const key of ["q", "players", "maxTime", "sort", "mechanic"]) {
+  for (const key of ["q", "players", "maxTime", "sort", "mechanic", "detailed"]) {
     const value = get(key);
     if (value) query.set(key, value);
   }

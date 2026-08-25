@@ -75,6 +75,15 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
         </FilterRow>
       )}
 
+      <FilterRow label="Detail">
+        <Chip
+          active={params.get("detailed") === "1"}
+          onClick={() => apply("detailed", "1")}
+        >
+          Only games with full details
+        </Chip>
+      </FilterRow>
+
       <FilterRow label="Sort">
         {SORTS.map((s) => (
           <Chip

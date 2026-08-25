@@ -193,7 +193,14 @@ func (im *Importer) HasToken() bool { return im.client.HasToken() }
 // topN limits the import to the highest-ranked games (0 imports everything).
 // Games already present are skipped, so the curated entries keep their better
 // tagging and weights, and a re-run only adds what is new.
-func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, error) {
+//
+// requireDetails decides the trade between breadth and completeness. The
+// rankings snapshot lists roughly three times as many games as the metadata
+// snapshot describes, so the remainder arrive as title-and-year only. Requiring
+// detail gives a smaller catalogue where every entry can be filtered; allowing
+// incomplete entries gives the full list, with sparse rows that the mechanic
+// and player filters simply never match.
+func (im *Importer) ImportCatalogue(ctx context.Context, topN int, requireDetails bool) (Result, error) {
 	c := catalogue.NewClient()
 	c.Logf = im.Logf
 
@@ -235,7 +242,8 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 		// Without a genre and a player count an entry cannot be filtered,
 		// sorted or meaningfully displayed, so it is not worth importing.
 		x, hasDetail := extras[e.BGGID]
-		if !hasDetail || x.MinPlayers == nil || len(x.Categories) == 0 {
+		complete := hasDetail && x.MinPlayers != nil && len(x.Categories) > 0
+		if requireDetails && !complete {
 			skipped++
 			continue
 		}
@@ -246,10 +254,14 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 			YearPublished: e.Year,
 			Source:        "seed",
 		}
-		g.MinPlayers, g.MaxPlayers = x.MinPlayers, x.MaxPlayers
-		g.MinPlaytime, g.MaxPlaytime = x.MinPlaytime, x.MaxPlaytime
-		g.Categories, g.Mechanics, g.Designers = x.Categories, x.Mechanics, x.Designers
-		enriched++
+		if hasDetail {
+			g.MinPlayers, g.MaxPlayers = x.MinPlayers, x.MaxPlayers
+			g.MinPlaytime, g.MaxPlaytime = x.MinPlaytime, x.MaxPlaytime
+			g.Categories, g.Mechanics, g.Designers = x.Categories, x.Mechanics, x.Designers
+		}
+		if complete {
+			enriched++
+		}
 
 		if e.Rank > 0 {
 			r := e.Rank
@@ -262,8 +274,11 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 		}
 		inputs = append(inputs, g)
 	}
-	im.logf("%d importable with full metadata; %d skipped for missing genre or player count",
-		enriched, skipped)
+	if skipped > 0 {
+		im.logf("%d with full metadata; %d skipped for missing genre or player count", enriched, skipped)
+	} else {
+		im.logf("%d of %d have full metadata; the rest are title and year only", enriched, len(inputs))
+	}
 
 	written, err := im.store.InsertNewGames(ctx, inputs, func(done, total int) {
 		if done%4000 == 0 || done == total {

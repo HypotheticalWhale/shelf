@@ -67,3 +67,12 @@ export type Profile = {
   shelf: ShelfItem[];
   posts: Post[];
 };
+
+export type Collector = {
+  user: User;
+  ownedCount: number;
+  ratedCount: number;
+  postCount: number;
+  avgRating: number;
+  shelfPeek: Game[];
+};

@@ -44,6 +44,7 @@ func (s *Server) Handler() http.Handler {
 
 	r.Get("/health", s.handleHealth)
 	r.Get("/mechanics", s.handleMechanics)
+	r.Get("/collectors", s.handleCollectors)
 
 	r.Route("/games", func(r chi.Router) {
 		r.Get("/", s.handleListGames)
@@ -100,6 +101,16 @@ func (s *Server) handleMechanics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"mechanics": mechanics})
+}
+
+// handleCollectors backs the people directory.
+func (s *Server) handleCollectors(w http.ResponseWriter, r *http.Request) {
+	people, err := s.store.ListCollectors(r.Context(), queryInt(r, "limit"), queryInt(r, "offset"))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"collectors": people})
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {

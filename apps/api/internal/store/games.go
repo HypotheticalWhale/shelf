@@ -19,9 +19,12 @@ type GameFilter struct {
 	MinWeight float64
 	MaxWeight float64
 	Sort      string
-	Limit     int
-	Offset    int
-	ViewerID  string
+	// DetailedOnly hides entries that have no mechanics or player count, for
+	// readers who would rather see fewer, fuller results.
+	DetailedOnly bool
+	Limit        int
+	Offset       int
+	ViewerID     string
 }
 
 // GamePage is one page of browse results.
@@ -77,6 +80,9 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 	}
 	if f.MaxWeight > 0 {
 		where = append(where, fmt.Sprintf("(g.weight <= %s)", ph(f.MaxWeight)))
+	}
+	if f.DetailedOnly {
+		where = append(where, "(cardinality(g.mechanics) > 0 AND g.min_players IS NOT NULL)")
 	}
 	if m := strings.TrimSpace(f.Mechanic); m != "" {
 		where = append(where, fmt.Sprintf("(%s = ANY(g.mechanics))", ph(m)))

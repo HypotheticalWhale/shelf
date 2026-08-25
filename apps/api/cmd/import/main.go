@@ -1,7 +1,8 @@
 // Command import fills the catalogue from BoardGameGeek.
 //
 //	go run ./cmd/import -seed                      load the bundled 65 games
-//	go run ./cmd/import -catalogue                 broad import from public snapshots
+//	go run ./cmd/import -catalogue                        complete games only
+//	go run ./cmd/import -catalogue -require-details=false  the full ~31k list
 //	go run ./cmd/import -prune-incomplete          drop games with no genre or players
 //	go run ./cmd/import -hot                       seed from BGG's hot list
 //	go run ./cmd/import -ids 174430,224517         import specific games
@@ -35,6 +36,7 @@ func main() {
 		useSeed    = flag.Bool("seed", false, "load the bundled 65-game catalogue (no BGG token needed)")
 		catalogueF = flag.Bool("catalogue", false, "bulk import from public BGG snapshots (no token needed)")
 		topN       = flag.Int("top", 0, "with -catalogue, import only the N highest-ranked games (0 = all)")
+		needDetail = flag.Bool("require-details", true, "with -catalogue, only import games that have a genre and player count")
 		clearSeed  = flag.Bool("clear-seed", false, "delete catalogue rows still marked as seed data")
 		prune      = flag.Bool("prune-incomplete", false, "remove games with no genre or player count (keeps anything rated, shelved or written about)")
 		hot        = flag.Bool("hot", false, "import BGG's current hot list")
@@ -102,7 +104,7 @@ func main() {
 		res = importer.Result{Requested: len(games), Fetched: len(games), Written: written}
 
 	case *catalogueF:
-		res, err = im.ImportCatalogue(ctx, *topN)
+		res, err = im.ImportCatalogue(ctx, *topN, *needDetail)
 
 	case *prune:
 		var removed, kept int
