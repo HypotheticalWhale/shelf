@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
+import { useLiveScore } from "./live-scores";
 import { RatingPips } from "./rating-pips";
 import { ScoreBadge } from "./score-badge";
 import { ShelfControls } from "./shelf-controls";
@@ -14,6 +15,10 @@ import type { GameDetail, Game } from "@/lib/types";
  */
 export function GamePanel({ game: initial }: { game: GameDetail }) {
   const [game, setGame] = useState<GameDetail>(initial);
+
+  // Live aggregates from other people's ratings.
+  const live = useLiveScore(game.slug);
+  const shown = live ? { ...game, ...live } : game;
 
   const onRated = (updated: Game) => {
     // The API returns the recomputed aggregates; the histogram is only refreshed
@@ -42,11 +47,11 @@ export function GamePanel({ game: initial }: { game: GameDetail }) {
             Shelf score
           </p>
           <div className="mt-2">
-            <ScoreBadge score={game.score} numRatings={game.numRatings} size="lg" />
+            <ScoreBadge score={shown.score} numRatings={shown.numRatings} size="lg" />
           </div>
-          {game.numRatings > 0 && (
+          {shown.numRatings > 0 && (
             <p className="mt-1.5 font-mono text-[11px] text-chalk-faint">
-              raw average {game.mean.toFixed(2)}
+              raw average {shown.mean.toFixed(2)}
             </p>
           )}
         </div>

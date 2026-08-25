@@ -11,6 +11,7 @@ import {
 } from "motion/react";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
+import { useLiveScore } from "./live-scores";
 import { formatYear, playerRange, scoreColor } from "@/lib/format";
 import type { Game } from "@/lib/types";
 
@@ -281,6 +282,8 @@ function LandingGameCard({
   reduced: boolean | null;
 }) {
   const [game, setGame] = useState(initial);
+  const live = useLiveScore(game.slug);
+  const shown = live ? { ...game, ...live } : game;
 
   return (
     <motion.div
@@ -318,13 +321,13 @@ function LandingGameCard({
 
         {/* The score, so a rating visibly lands. */}
         <p className="mt-2 font-mono text-sm">
-          {game.numRatings > 0 ? (
+          {shown.numRatings > 0 ? (
             <>
-              <span style={{ color: scoreColor(game.score) }} className="font-bold">
-                {game.score.toFixed(1)}
+              <span style={{ color: scoreColor(shown.score) }} className="font-bold">
+                {shown.score.toFixed(1)}
               </span>
               <span className="ml-1.5 text-[11px] text-white/30">
-                {game.numRatings} {game.numRatings === 1 ? "rating" : "ratings"}
+                {shown.numRatings} {shown.numRatings === 1 ? "rating" : "ratings"}
               </span>
             </>
           ) : (

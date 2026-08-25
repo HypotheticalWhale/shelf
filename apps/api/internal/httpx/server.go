@@ -45,6 +45,7 @@ func (s *Server) Handler() http.Handler {
 	r.Get("/health", s.handleHealth)
 	r.Get("/mechanics", s.handleMechanics)
 	r.Get("/collectors", s.handleCollectors)
+	r.Get("/events", s.handleEvents)
 
 	r.Route("/games", func(r chi.Router) {
 		r.Get("/", s.handleListGames)

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "motion/react";
+import { useLiveScore } from "./live-scores";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
 import { ScoreBadge } from "./score-badge";
@@ -18,6 +19,11 @@ import type { Game } from "@/lib/types";
  */
 export function GameCard({ game: initial, index = 0 }: { game: Game; index?: number }) {
   const [game, setGame] = useState(initial);
+
+  // Somebody else rating this game updates the card in place. Only the
+  // aggregates follow the stream — a viewer's own rating is theirs alone.
+  const live = useLiveScore(game.slug);
+  const shown = live ? { ...game, ...live } : game;
 
   const players = playerRange(game.minPlayers, game.maxPlayers);
   const time = playtime(game.minPlaytime, game.maxPlaytime);
@@ -56,7 +62,7 @@ export function GameCard({ game: initial, index = 0 }: { game: Game; index?: num
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <ScoreBadge score={game.score} numRatings={game.numRatings} />
+          <ScoreBadge score={shown.score} numRatings={shown.numRatings} />
         </div>
 
         <RatingPips

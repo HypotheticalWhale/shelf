@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { SiteHeader } from "@/components/site-header";
+import { LiveScoresProvider } from "@/components/live-scores";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({
@@ -38,8 +39,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         className={`${display.variable} ${sans.variable} ${mono.variable} h-full`}
       >
         <body className="relative min-h-full flex flex-col">
-          <SiteHeader />
-          <main className="relative z-10 flex-1">{children}</main>
+          <LiveScoresProvider>
+            <SiteHeader />
+            <main className="relative z-10 flex-1">{children}</main>
+          </LiveScoresProvider>
           <footer className="relative z-10 border-t border-rule-soft mt-24">
             <div className="mx-auto max-w-6xl px-5 py-8 flex flex-wrap gap-x-6 gap-y-2 items-baseline justify-between text-sm text-chalk-faint">
               <p className="font-mono text-xs uppercase tracking-[0.18em]">
