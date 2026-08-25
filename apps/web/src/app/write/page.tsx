@@ -12,17 +12,15 @@ export default async function WritePage({ searchParams }: PageProps<"/write">) {
   const game = params.game;
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
-      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-meeple-teal">
-        New post
-      </p>
-      <h1 className="mt-3 font-display font-800 text-4xl tracking-[-0.03em]">
-        Write it down.
-      </h1>
-      <p className="mt-2 text-chalk-dim max-w-md">
-        A review, a session report, an argument. Save a draft while you think it
-        over, publish when it is ready.
-      </p>
+    <div className="mx-auto max-w-3xl px-5 py-9">
+      <div className="flex items-baseline justify-between gap-4 flex-wrap">
+        <h1 className="font-display font-800 text-3xl tracking-[-0.03em]">
+          Write it down.
+        </h1>
+        <p className="text-sm text-chalk-faint">
+          A review, a session report, an argument.
+        </p>
+      </div>
 
       <Composer defaultGameSlug={Array.isArray(game) ? game[0] : game} />
     </div>

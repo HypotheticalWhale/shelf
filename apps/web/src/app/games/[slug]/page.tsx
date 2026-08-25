@@ -43,6 +43,7 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
             className="w-full aspect-square rounded-xl border border-rule-soft"
             sizes="300px"
             priority
+            full
           />
 
           <dl className="mt-5 divide-y divide-rule-soft border-y border-rule-soft">

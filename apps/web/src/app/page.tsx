@@ -2,12 +2,16 @@ import Link from "next/link";
 import { apiGet } from "@/lib/api";
 import { GameCard } from "@/components/game-card";
 import { HeroRating } from "@/components/hero-rating";
+import { HeroShelf } from "@/components/hero-shelf";
 import { PostRow } from "@/components/post-row";
 import type { GamePage, Post } from "@/lib/types";
 
 export default async function HomePage() {
-  const [top, feed] = await Promise.all([
+  // The shelf and the grid ask for different things: a wide row of spines, and
+  // the ten games actually at the top of the chart.
+  const [top, shelf, feed] = await Promise.all([
     apiGet<GamePage>("/games?sort=score&limit=10", { authenticated: true }),
+    apiGet<GamePage>("/games?sort=score&limit=22&offset=10"),
     apiGet<{ posts: Post[] }>("/posts?limit=4"),
   ]);
 
@@ -36,6 +40,8 @@ export default async function HomePage() {
             <HeroRating game={featured} />
           </div>
         )}
+
+        <HeroShelf games={shelf.games} />
       </section>
 
       <section className="border-t border-rule-soft pt-12">
@@ -45,7 +51,8 @@ export default async function HomePage() {
           </h2>
           <p className="text-sm text-chalk-faint max-w-md">
             Ranked with a Bayesian average, so a game needs more than one
-            enthusiastic vote to reach the top.
+            enthusiastic vote to reach the top. Games nobody here has rated yet
+            fall back to BoardGameGeek&rsquo;s chart order.
           </p>
         </header>
 

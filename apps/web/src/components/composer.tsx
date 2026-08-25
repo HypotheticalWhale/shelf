@@ -86,7 +86,7 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
   return (
     <div className="mt-8 rounded-2xl border border-rule bg-felt-900/80 shadow-2xl shadow-felt-950/50 overflow-clip">
       {/* Title */}
-      <div className="px-6 sm:px-9 pt-8 pb-5">
+      <div className="px-6 sm:px-9 pt-6 pb-4">
         <textarea
           ref={(el) => {
             titleRef.current = el;
@@ -101,7 +101,7 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
             // Enter belongs to the body, not the title.
             if (e.key === "Enter") e.preventDefault();
           }}
-          placeholder="What did you play?"
+          placeholder="Title"
           aria-label="Post title"
           maxLength={140}
           rows={1}
@@ -145,18 +145,18 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
       </div>
 
       {/* Surface */}
-      <div className="px-6 sm:px-9 py-6 min-h-[26rem]">
+      <div className="px-6 sm:px-9 py-5 min-h-[18rem]">
         {tab === "write" ? (
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder={"How did it play?\n\nWhat worked, what dragged, who would you hand it to.\n\nMarkdown works: ## headings, **bold**, > quotes, - lists."}
+            placeholder="How did it play? What worked, what dragged, who would you hand it to."
             aria-label="Post body"
-            rows={16}
+            rows={12}
             className="w-full max-w-[68ch] bg-transparent outline-none resize-none text-[1.0625rem] leading-[1.75] placeholder:text-chalk-faint/40 placeholder:leading-[1.9]"
           />
         ) : (
-          <div className="prose-shelf max-w-[68ch]">
+          <div className="prose-shelf max-w-[68ch] min-h-[14rem]">
             {body.trim() ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
             ) : (
@@ -171,9 +171,15 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
       {/* Actions — pinned to the sheet so Publish never falls below the fold. */}
       <div className="sticky bottom-0 px-6 sm:px-9 py-4 border-t border-rule bg-felt-800/95 backdrop-blur flex items-center justify-between gap-4 flex-wrap">
         <p className="font-mono text-[11px] text-chalk-faint" aria-live="polite">
-          {stats.words === 0
-            ? "empty"
-            : `${stats.words} ${stats.words === 1 ? "word" : "words"} · ${stats.minutes} min read`}
+          {stats.words === 0 ? (
+            <span>
+              Markdown works — <span className="text-chalk-dim">## heading</span>,{" "}
+              <span className="text-chalk-dim">**bold**</span>,{" "}
+              <span className="text-chalk-dim">&gt; quote</span>
+            </span>
+          ) : (
+            `${stats.words} ${stats.words === 1 ? "word" : "words"} · ${stats.minutes} min read`
+          )}
         </p>
 
         <div className="flex items-center gap-2.5">

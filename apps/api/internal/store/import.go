@@ -28,6 +28,10 @@ type GameInput struct {
 	// Source is "bgg" for imported games or "seed" for the bundled catalogue.
 	// Empty means "bgg".
 	Source string
+
+	// BGGRank is BoardGameGeek's chart position. Used only to break ties
+	// between games Shelf's own ratings cannot yet separate.
+	BGGRank *int
 }
 
 // UpsertGames writes games keyed on bgg_id, so re-running an import refreshes
@@ -247,21 +251,25 @@ func (s *Store) InsertNewGames(ctx context.Context, games []GameInput, progress 
 			min_players, max_players, min_playtime, max_playtime,
 			designers, categories, mechanics, source, imported_at) VALUES `)
 
-		args := make([]any, 0, len(batch)*12)
+		args := make([]any, 0, len(batch)*14)
 		for i, r := range batch {
 			if i > 0 {
 				sb.WriteString(",")
 			}
-			n := i * 12
-			fmt.Fprintf(&sb, "($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d, now())",
-				n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10, n+11, n+12)
+			n := i * 14
+			fmt.Fprintf(&sb, "($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d, now())",
+				n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10, n+11, n+12, n+13, n+14)
 
 			source := r.g.Source
 			if source == "" {
 				source = "seed"
 			}
+			var thumb *string
+			if r.g.ThumbnailURL != "" {
+				thumb = &r.g.ThumbnailURL
+			}
 			args = append(args,
-				r.g.BGGID, r.slug, r.g.Name, r.g.YearPublished,
+				r.g.BGGID, r.slug, r.g.Name, r.g.YearPublished, thumb, r.g.BGGRank,
 				r.g.MinPlayers, r.g.MaxPlayers, r.g.MinPlaytime, r.g.MaxPlaytime,
 				// These columns are NOT NULL DEFAULT '{}'; a nil Go slice sends
 				// NULL, not an empty array, so most games would be rejected.
@@ -312,4 +320,80 @@ func emptyIfNil(v []string) []string {
 		return []string{}
 	}
 	return v
+}
+
+// BackfillThumbnails fills in cover thumbnails for games that have none.
+//
+// Kept separate from the bulk insert so it can run against a catalogue that is
+// already loaded, and written to never clobber existing art: once a BGG import
+// supplies a real cover, later snapshot runs leave it alone.
+func (s *Store) BackfillThumbnails(ctx context.Context, thumbs map[int]string) (int, error) {
+	if len(thumbs) == 0 {
+		return 0, nil
+	}
+
+	ids := make([]int, 0, len(thumbs))
+	urls := make([]string, 0, len(thumbs))
+	for id, u := range thumbs {
+		if id <= 0 || !strings.HasPrefix(u, "http") {
+			continue
+		}
+		ids = append(ids, id)
+		urls = append(urls, u)
+	}
+
+	const sql = `
+		UPDATE games g
+		   SET thumbnail_url = v.url
+		  FROM (SELECT unnest($1::int[]) AS bgg_id, unnest($2::text[]) AS url) v
+		 WHERE g.bgg_id = v.bgg_id
+		   AND g.thumbnail_url IS NULL`
+
+	updated := 0
+	const chunk = 5000
+	for start := 0; start < len(ids); start += chunk {
+		end := min(start+chunk, len(ids))
+		tag, err := s.pool.Exec(ctx, sql, ids[start:end], urls[start:end])
+		if err != nil {
+			return updated, fmt.Errorf("backfill thumbnails: %w", err)
+		}
+		updated += int(tag.RowsAffected())
+	}
+	return updated, nil
+}
+
+// BackfillRanks records BoardGameGeek chart positions for existing rows.
+func (s *Store) BackfillRanks(ctx context.Context, ranks map[int]int) (int, error) {
+	if len(ranks) == 0 {
+		return 0, nil
+	}
+
+	ids := make([]int, 0, len(ranks))
+	vals := make([]int, 0, len(ranks))
+	for id, r := range ranks {
+		if id <= 0 || r <= 0 {
+			continue
+		}
+		ids = append(ids, id)
+		vals = append(vals, r)
+	}
+
+	const sql = `
+		UPDATE games g
+		   SET bgg_rank = v.rank
+		  FROM (SELECT unnest($1::int[]) AS bgg_id, unnest($2::int[]) AS rank) v
+		 WHERE g.bgg_id = v.bgg_id
+		   AND g.bgg_rank IS DISTINCT FROM v.rank`
+
+	updated := 0
+	const chunk = 5000
+	for start := 0; start < len(ids); start += chunk {
+		end := min(start+chunk, len(ids))
+		tag, err := s.pool.Exec(ctx, sql, ids[start:end], vals[start:end])
+		if err != nil {
+			return updated, fmt.Errorf("backfill ranks: %w", err)
+		}
+		updated += int(tag.RowsAffected())
+	}
+	return updated, nil
 }

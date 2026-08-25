@@ -227,6 +227,8 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 		im.logf("metadata snapshot holds %d games", len(extras))
 	}
 
+	thumbs := make(map[int]string, len(ranked))
+	ranks := make(map[int]int, len(ranked))
 	inputs := make([]store.GameInput, 0, len(ranked))
 	enriched := 0
 	for _, e := range ranked {
@@ -242,6 +244,15 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 			g.Categories, g.Mechanics, g.Designers = x.Categories, x.Mechanics, x.Designers
 			enriched++
 		}
+		if e.Rank > 0 {
+			r := e.Rank
+			g.BGGRank = &r
+			ranks[e.BGGID] = e.Rank
+		}
+		if e.Thumbnail != "" {
+			thumbs[e.BGGID] = e.Thumbnail
+			g.ThumbnailURL = e.Thumbnail
+		}
 		inputs = append(inputs, g)
 	}
 	im.logf("%d of %d games have full metadata", enriched, len(inputs))
@@ -251,6 +262,21 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 			im.logf("inserted %d/%d", done, total)
 		}
 	})
+
+	if err == nil {
+		filled, terr := im.store.BackfillThumbnails(ctx, thumbs)
+		if terr != nil {
+			im.logf("thumbnail backfill failed: %v", terr)
+		} else if filled > 0 {
+			im.logf("filled %d cover thumbnails", filled)
+		}
+
+		if n, rerr := im.store.BackfillRanks(ctx, ranks); rerr != nil {
+			im.logf("rank backfill failed: %v", rerr)
+		} else if n > 0 {
+			im.logf("recorded %d chart positions", n)
+		}
+	}
 
 	res := Result{
 		Requested: len(inputs),

@@ -83,14 +83,21 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 		whereSQL = "WHERE " + strings.Join(where, " AND ")
 	}
 
-	orderSQL := bayesOrder + " DESC NULLS LAST, gs.num_ratings DESC"
+	// Ties are broken by BoardGameGeek's chart position. Until Shelf has
+	// ratings of its own, every Bayesian score sits at exactly the global mean,
+	// and without a tie-break "highest rated" is whatever Postgres scanned
+	// first. The rank is never shown as a score and never mixed into one; its
+	// influence disappears as soon as real ratings separate the games.
+	const tieBreak = ", g.bgg_rank ASC NULLS LAST, g.bgg_id ASC"
+
+	orderSQL := bayesOrder + " DESC NULLS LAST, gs.num_ratings DESC" + tieBreak
 	switch f.Sort {
 	case "popular":
-		orderSQL = "gs.num_ratings DESC NULLS LAST, " + bayesOrder + " DESC"
+		orderSQL = "gs.num_ratings DESC NULLS LAST" + tieBreak
 	case "new":
-		orderSQL = "g.year_published DESC NULLS LAST, " + bayesOrder + " DESC"
+		orderSQL = "g.year_published DESC NULLS LAST" + tieBreak
 	case "name":
-		orderSQL = "g.name ASC"
+		orderSQL = "g.name ASC, g.bgg_id ASC"
 	}
 
 	viewerIdx := len(args) + 1

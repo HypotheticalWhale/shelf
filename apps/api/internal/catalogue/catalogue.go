@@ -17,8 +17,10 @@
 //   - BGG's own ratings and averages. Shelf's scores are its own; borrowing
 //     another site's numbers would make the whole ranking meaningless.
 //   - Descriptions. Those are copyrighted text written by BGG's members.
-//   - Images. The rank file's thumbnails are 64x64 and the CDN's transforms are
-//     signed, so no larger variant can be derived.
+//   - Full-size images. The rank file carries only a 64x64 thumbnail and the
+//     CDN's transforms are HMAC-signed, so no larger variant can be derived
+//     from one. Those thumbnails are imported for colour and recognition, and
+//     real box art arrives with a BGG token.
 package catalogue
 
 import (
@@ -44,6 +46,10 @@ type Entry struct {
 	Name  string
 	Year  *int
 	Rank  int
+	// Thumbnail is BGG's 64x64 cover crop. The CDN signs its transforms, so no
+	// larger variant can be derived from it — it is a colour and shape cue, not
+	// a substitute for real box art.
+	Thumbnail string
 }
 
 // Extra is the richer metadata available for older games.
@@ -128,10 +134,11 @@ func (c *Client) FetchRanked(ctx context.Context) ([]Entry, error) {
 			continue
 		}
 		out = append(out, Entry{
-			BGGID: id,
-			Name:  name,
-			Year:  parseYear(get(rec, col, "Year")),
-			Rank:  atoi(get(rec, col, "Rank")),
+			BGGID:     id,
+			Name:      name,
+			Year:      parseYear(get(rec, col, "Year")),
+			Rank:      atoi(get(rec, col, "Rank")),
+			Thumbnail: strings.TrimSpace(get(rec, col, "Thumbnail")),
 		})
 	}
 	return out, nil
