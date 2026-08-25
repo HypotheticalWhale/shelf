@@ -20,6 +20,16 @@ import type { Game, GamePage } from "@/lib/types";
  * opens the highlighted one, falling back to the full results page.
  */
 export function SearchField() {
+  // Narrow screens get a shorter prompt rather than a truncated one.
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
   const router = useRouter();
   const params = useSearchParams();
 
@@ -142,7 +152,7 @@ export function SearchField() {
           onChange={(e) => setValue(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Search games, designers, mechanics…"
+          placeholder={compact ? "Search games" : "Search games, designers, mechanics…"}
           aria-label="Search games"
           role="combobox"
           aria-expanded={open}

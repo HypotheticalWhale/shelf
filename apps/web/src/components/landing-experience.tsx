@@ -80,7 +80,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
             pointerEvents: reduced ? "auto" : heroPointer,
             willChange: "opacity",
           }}
-          className="absolute left-1/2 top-[7%] z-20 w-full -translate-x-1/2 px-6 text-center"
+          className="absolute left-1/2 top-[6%] z-20 w-full -translate-x-1/2 px-5 text-center sm:top-[7%] sm:px-6"
         >
           <div className="mx-auto mb-5 w-fit rounded-full border border-amber-300/20 bg-amber-300/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-amber-200">
             The tabletop starts here
@@ -104,7 +104,16 @@ export function LandingExperience({ games }: { games: Game[] }) {
         */}
         <div
           className="absolute inset-0"
-          style={{ perspective: "1200px", perspectiveOrigin: "50% 40%" }}
+          style={{
+            perspective: "1200px",
+            perspectiveOrigin: "50% 40%",
+            // The table is drawn at a fixed 850px. Rather than reflow every
+            // piece on it, scale the whole scene down to whatever width there
+            // is — a phone then sees the same tabletop, just smaller.
+            // --table-fit is set per breakpoint in globals.css; scale needs a
+            // unitless ratio, which calc() cannot derive from viewport units.
+            scale: "var(--table-fit)",
+          }}
         >
           <motion.div
             style={{
@@ -115,7 +124,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
               transformStyle: "preserve-3d",
               willChange: "transform, opacity",
             }}
-            className="absolute left-1/2 top-[70%] h-[380px] w-[850px] -translate-x-1/2 -translate-y-1/2"
+            className="absolute left-1/2 top-[68%] h-[380px] w-[850px] -translate-x-1/2 -translate-y-1/2"
           >
             <div className="absolute -bottom-20 left-[8%] h-24 w-[84%] rounded-full bg-black/60 blur-xl" />
 
@@ -184,14 +193,14 @@ export function LandingExperience({ games }: { games: Game[] }) {
             pointerEvents: reduced ? "auto" : cataloguePointer,
             willChange: "transform, opacity",
           }}
-          className="absolute inset-x-0 top-[6%] z-20 mx-auto w-full max-w-7xl px-6"
+          className="absolute inset-x-0 top-[5%] z-20 mx-auto w-full max-w-7xl px-5 sm:top-[6%] sm:px-6"
         >
-          <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
             <div>
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
                 Explore
               </p>
-              <h2 className="font-display text-4xl font-black tracking-tight text-white sm:text-6xl">
+              <h2 className="font-display text-3xl font-black tracking-tight text-white sm:text-6xl">
                 What&rsquo;s on the table?
               </h2>
             </div>
@@ -206,7 +215,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
 
           <Link
             href="/games"
-            className="mb-8 flex items-center rounded-2xl border border-white/10 bg-[#221b14] px-5 py-4 transition hover:bg-[#2b231a]"
+            className="mb-5 flex items-center rounded-2xl sm:mb-8 border border-white/10 bg-[#221b14] px-5 py-4 transition hover:bg-[#2b231a]"
           >
             <span className="mr-3 text-white/30">⌕</span>
             <span className="text-sm text-white/30">
@@ -214,7 +223,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
             </span>
           </Link>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
             {shown.map((game, i) => (
               <LandingGameCard key={game.slug} game={game} index={i} reduced={reduced} />
             ))}

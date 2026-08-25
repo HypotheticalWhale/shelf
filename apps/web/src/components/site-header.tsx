@@ -3,6 +3,7 @@ import { PenLine } from "lucide-react";
 import { Suspense } from "react";
 import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { SearchField } from "./search-field";
+import { MobileNav } from "./mobile-nav";
 
 export function SiteHeader() {
   return (
@@ -10,10 +11,17 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-5 lg:gap-6">
         <Link href="/" className="group flex items-center gap-2.5 shrink-0">
           <ShelfMark />
-          <span className="font-display text-xl font-800 tracking-[-0.03em]">
+          <span className="hidden font-display text-xl font-800 tracking-[-0.03em] sm:inline">
             Shelf
           </span>
         </Link>
+
+        <Show when="signed-in">
+          <MobileNav signedIn />
+        </Show>
+        <Show when="signed-out">
+          <MobileNav signedIn={false} />
+        </Show>
 
         <nav className="hidden items-center gap-4 text-sm text-chalk-dim lg:flex">
           <Link href="/games" className="hover:text-chalk transition-colors">
