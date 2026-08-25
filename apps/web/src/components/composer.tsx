@@ -6,6 +6,7 @@ import { useAuth } from "@clerk/nextjs";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { apiRequest } from "@/lib/client";
+import { GamePicker } from "./game-picker";
 import { cn } from "@/lib/format";
 import type { Post } from "@/lib/types";
 
@@ -22,7 +23,7 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [gameSlug, setGameSlug] = useState(defaultGameSlug ?? "");
+  const [gameSlug, setGameSlug] = useState<string | null>(defaultGameSlug ?? null);
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
         body: JSON.stringify({
           title: title.trim(),
           bodyMd: body,
-          gameSlug: gameSlug.trim() || undefined,
+          gameSlug: gameSlug ?? undefined,
           publish,
         }),
         token,
@@ -51,7 +52,12 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
       const me = await apiRequest<{ username: string }>("/me", { token });
       router.push(`/u/${me.username}/${post.slug}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save the post");
+      const message = err instanceof Error ? err.message : "";
+      setError(
+        message === "not found"
+          ? "That game is no longer in the catalogue. Clear it and try again."
+          : message || "Could not save the post",
+      );
       setBusy(false);
     }
   };
@@ -66,17 +72,12 @@ export function Composer({ defaultGameSlug }: { defaultGameSlug?: string }) {
         className="w-full bg-transparent font-display font-800 text-3xl tracking-[-0.03em] placeholder:text-chalk-faint/60 outline-none border-b border-rule-soft focus:border-rule pb-3 transition-colors"
       />
 
-      <label className="mt-5 flex items-center gap-3 text-sm">
+      <div className="mt-5 flex items-center gap-3 text-sm">
         <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-chalk-faint shrink-0">
           About
         </span>
-        <input
-          value={gameSlug}
-          onChange={(e) => setGameSlug(e.target.value)}
-          placeholder="game-slug (optional)"
-          className="flex-1 bg-felt-800 border border-rule-soft rounded-md px-3 py-1.5 font-mono text-xs placeholder:text-chalk-faint outline-none focus:border-rule transition-colors"
-        />
-      </label>
+        <GamePicker defaultSlug={defaultGameSlug} onChange={setGameSlug} />
+      </div>
 
       <div className="mt-6 flex gap-1 border-b border-rule-soft">
         {(["write", "preview"] as const).map((t) => (

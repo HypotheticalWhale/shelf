@@ -5,11 +5,18 @@
 // usable immediately, and so local development never depends on an external
 // API being reachable.
 //
-// The data here is deliberately conservative: title, year, player count,
-// playtime, designers and tags only. Complexity weights, descriptions and cover
-// art are left empty rather than guessed, because a real BGG import fills them
-// in accurately. Games are written with source='seed'; importing the same
-// bgg_id from BGG promotes the row to source='bgg' and corrects every field.
+// Titles, years, player counts, playtimes, designers, categories and mechanics
+// are accurate. Complexity weights follow BGG's 1-5 scale and are close
+// community-consensus figures rather than exact ones — good enough to sort and
+// filter by, and overwritten the moment a real BGG import runs.
+//
+// Cover art is deliberately absent. Board game box art is copyrighted and there
+// is no freely-licensed bulk source; Wikipedia's covers are non-free fair-use
+// files whose licence does not extend to this site. The UI draws a typographic
+// cover instead, and real art arrives with a BGG token.
+//
+// Games are written with source='seed'; importing the same bgg_id from BGG
+// promotes the row to source='bgg' and corrects every field.
 package seed
 
 import (
@@ -31,6 +38,7 @@ type seedGame struct {
 	MaxPlayers  *int     `json:"maxPlayers"`
 	MinPlaytime *int     `json:"minPlaytime"`
 	MaxPlaytime *int     `json:"maxPlaytime"`
+	Weight      *float64 `json:"weight"`
 	Designers   []string `json:"designers"`
 	Categories  []string `json:"categories"`
 	Mechanics   []string `json:"mechanics"`
@@ -53,6 +61,7 @@ func Games() ([]store.GameInput, error) {
 			MaxPlayers:    g.MaxPlayers,
 			MinPlaytime:   g.MinPlaytime,
 			MaxPlaytime:   g.MaxPlaytime,
+			Weight:        g.Weight,
 			Designers:     g.Designers,
 			Categories:    g.Categories,
 			Mechanics:     g.Mechanics,

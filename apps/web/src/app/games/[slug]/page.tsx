@@ -24,7 +24,10 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
   const facts = [
     ["Players", playerRange(game.minPlayers, game.maxPlayers)],
     ["Length", playtime(game.minPlaytime, game.maxPlaytime)],
-    ["Weight", weightLabel(game.weight)],
+    [
+      "Complexity",
+      game.weight ? `${game.weight.toFixed(1)} · ${weightLabel(game.weight)}` : null,
+    ],
     ["Published", game.yearPublished ? String(game.yearPublished) : null],
     ["Designer", game.designers?.slice(0, 2).join(", ") || null],
   ].filter(([, value]) => Boolean(value)) as [string, string][];
@@ -53,18 +56,8 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
             ))}
           </dl>
 
-          {game.categories && game.categories.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-1.5">
-              {game.categories.slice(0, 8).map((c) => (
-                <li
-                  key={c}
-                  className="font-mono text-[10px] uppercase tracking-wider text-chalk-dim border border-rule-soft rounded-full px-2 py-0.5"
-                >
-                  {c}
-                </li>
-              ))}
-            </ul>
-          )}
+          <TagGroup label="Themes" tags={game.categories} accent="text-meeple-amber" />
+          <TagGroup label="How it plays" tags={game.mechanics} accent="text-meeple-teal" />
         </div>
 
         <div className="min-w-0">
@@ -112,6 +105,36 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TagGroup({
+  label,
+  tags,
+  accent,
+}: {
+  label: string;
+  tags?: string[];
+  accent: string;
+}) {
+  if (!tags || tags.length === 0) return null;
+
+  return (
+    <div className="mt-5">
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalk-faint">
+        {label}
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-1.5">
+        {tags.map((tag) => (
+          <li
+            key={tag}
+            className={`font-mono text-[10px] uppercase tracking-wider ${accent} border border-rule-soft rounded-full px-2 py-0.5`}
+          >
+            {tag}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
