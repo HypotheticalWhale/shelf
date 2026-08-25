@@ -19,7 +19,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
     limit: String(PAGE_SIZE),
     offset: String((page - 1) * PAGE_SIZE),
   });
-  for (const key of ["q", "players", "maxTime", "sort", "mechanic", "detailed"]) {
+  for (const key of ["q", "players", "maxTime", "sort", "mechanic"]) {
     const value = get(key);
     if (value) query.set(key, value);
   }
@@ -35,7 +35,9 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display font-800 text-4xl tracking-[-0.03em]">
-            {get("q") ? `“${get("q")}”` : (get("mechanic") ?? "Every game")}
+            {get("q")
+            ? `“${get("q")}”`
+            : (get("mechanic")?.split(",").join(" · ") ?? "Every game")}
           </h1>
           <p className="mt-1.5 font-mono text-xs text-chalk-faint">
             {result.total} {result.total === 1 ? "game" : "games"}

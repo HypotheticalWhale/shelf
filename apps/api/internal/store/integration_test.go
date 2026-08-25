@@ -388,7 +388,7 @@ func TestFiltersNarrowResults(t *testing.T) {
 	reset(t, ctx)
 	seedCatalogue(t, ctx, st)
 
-	two, err := st.ListGames(ctx, store.GameFilter{Players: 2, Limit: 100})
+	two, err := st.ListGames(ctx, store.GameFilter{Players: []int{2}, Limit: 100})
 	if err != nil {
 		t.Fatalf("filter by players: %v", err)
 	}
@@ -401,7 +401,7 @@ func TestFiltersNarrowResults(t *testing.T) {
 		}
 	}
 
-	seven, err := st.ListGames(ctx, store.GameFilter{Players: 7, Limit: 100})
+	seven, err := st.ListGames(ctx, store.GameFilter{Players: []int{7}, Limit: 100})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -579,5 +579,77 @@ func TestClearSeedRemovesEverySeededGame(t *testing.T) {
 	}
 	if left != 0 {
 		t.Errorf("%d games survived a full seed clear", left)
+	}
+}
+
+// TestMultiSelectFilters covers the OR-within / AND-across semantics a set of
+// filter chips implies.
+func TestMultiSelectFilters(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+	reset(t, ctx)
+	seedCatalogue(t, ctx, st)
+
+	two, err := st.ListGames(ctx, store.GameFilter{Players: []int{2}, Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+	five, err := st.ListGames(ctx, store.GameFilter{Players: []int{5}, Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+	both, err := st.ListGames(ctx, store.GameFilter{Players: []int{2, 5}, Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Selecting two player counts must widen the result, never narrow it.
+	if both.Total < two.Total || both.Total < five.Total {
+		t.Fatalf("2-or-5 (%d) is smaller than 2 alone (%d) or 5 alone (%d)",
+			both.Total, two.Total, five.Total)
+	}
+	for _, g := range both.Games {
+		okTwo := g.MinPlayers != nil && g.MaxPlayers != nil && *g.MinPlayers <= 2 && *g.MaxPlayers >= 2
+		okFive := g.MinPlayers != nil && g.MaxPlayers != nil && *g.MinPlayers <= 5 && *g.MaxPlayers >= 5
+		if !okTwo && !okFive {
+			t.Fatalf("%s supports neither 2 nor 5 players (%v-%v)", g.Name, g.MinPlayers, g.MaxPlayers)
+		}
+	}
+
+	// Same for mechanics.
+	deck, err := st.ListGames(ctx, store.GameFilter{Mechanics: []string{"Deck Building"}, Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pair, err := st.ListGames(ctx, store.GameFilter{
+		Mechanics: []string{"Deck Building", "Worker Placement"}, Limit: 200,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pair.Total < deck.Total {
+		t.Fatalf("two mechanics (%d) returned fewer than one (%d)", pair.Total, deck.Total)
+	}
+	for _, g := range pair.Games {
+		has := false
+		for _, m := range g.Mechanics {
+			if m == "Deck Building" || m == "Worker Placement" {
+				has = true
+			}
+		}
+		if !has {
+			t.Fatalf("%s has neither mechanic: %v", g.Name, g.Mechanics)
+		}
+	}
+
+	// Across facets the filters combine.
+	combo, err := st.ListGames(ctx, store.GameFilter{
+		Mechanics: []string{"Deck Building"}, Players: []int{2}, Limit: 200,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if combo.Total > deck.Total {
+		t.Fatalf("adding a player filter widened the result: %d > %d", combo.Total, deck.Total)
 	}
 }

@@ -2,8 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
-import { ShelfRow, type ShelfEntry } from "@/components/shelf-wall";
-import type { Rating, ShelfItem, User } from "@/lib/types";
+import { ShelfFilters } from "@/components/shelf-filters";
+import { type ShelfEntry } from "@/components/shelf-wall";
+import type { ShelfItem, User } from "@/lib/types";
 
 export const metadata = { title: "My shelf" };
 
@@ -17,14 +18,11 @@ export default async function MyShelfPage() {
   // are public endpoints, but apiGet caches unauthenticated reads for a minute
   // — which meant a game you had just added did not appear on your own shelf
   // until the cache expired.
-  const [owned, wishlist, rated] = await Promise.all([
+  const [owned, wishlist] = await Promise.all([
     apiGet<{ shelf: ShelfItem[] }>(`/users/${me.username}/shelf?status=owned&limit=200`, {
       authenticated: true,
     }),
     apiGet<{ shelf: ShelfItem[] }>(`/users/${me.username}/shelf?status=wishlist&limit=200`, {
-      authenticated: true,
-    }),
-    apiGet<{ ratings: Rating[] }>(`/users/${me.username}/ratings?limit=200`, {
       authenticated: true,
     }),
   ]);
@@ -32,12 +30,7 @@ export default async function MyShelfPage() {
   const toEntries = (items: ShelfItem[]): ShelfEntry[] =>
     items.filter((i) => i.game).map((i) => ({ game: i.game! }));
 
-  const ratedEntries: ShelfEntry[] = rated.ratings
-    .filter((r) => r.game)
-    .map((r) => ({ game: r.game!, rating: r.value }));
-
-  const total =
-    owned.shelf.length + wishlist.shelf.length + rated.ratings.length;
+  const total = owned.shelf.length + wishlist.shelf.length;
 
   return (
     <div className="shell py-12">
@@ -62,8 +55,8 @@ export default async function MyShelfPage() {
         <div className="mt-12 rounded-2xl border border-rule bg-felt-900/60 px-6 py-14 text-center">
           <p className="font-display font-700 text-xl">Nothing on the shelf yet.</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-chalk-dim">
-            Rate a game or mark one as owned and it appears here, spine out,
-            like the real thing.
+            Mark a game as owned or add one to your wishlist and it appears
+            here, spine out, like the real thing.
           </p>
           <Link
             href="/games"
@@ -73,46 +66,10 @@ export default async function MyShelfPage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10">
-          <ShelfRow
-            label="Owned"
-            hint="Boxes actually on your shelf"
-            accent="var(--color-meeple-teal)"
-            entries={toEntries(owned.shelf)}
-            empty={
-              <>
-                Nothing marked as owned.{" "}
-                <Link href="/games" className="text-meeple-amber hover:underline">
-                  Add something you have.
-                </Link>
-              </>
-            }
-          />
-
-          <ShelfRow
-            label="Rated"
-            hint="Your score on each spine"
-            accent="var(--color-meeple-amber)"
-            entries={ratedEntries}
-            empty={
-              <>
-                You have not rated anything yet. It takes one tap from{" "}
-                <Link href="/games" className="text-meeple-amber hover:underline">
-                  the catalogue
-                </Link>
-                .
-              </>
-            }
-          />
-
-          <ShelfRow
-            label="Want"
-            hint="The wishlist"
-            accent="var(--color-meeple-violet)"
-            entries={toEntries(wishlist.shelf)}
-            empty={<>Nothing on the wishlist.</>}
-          />
-        </div>
+        <ShelfFilters
+          owned={toEntries(owned.shelf)}
+          wanted={toEntries(wishlist.shelf)}
+        />
       )}
     </div>
   );

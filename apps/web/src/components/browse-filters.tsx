@@ -24,16 +24,54 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
   const router = useRouter();
   const params = useSearchParams();
 
-  const apply = (key: string, value: string | null) => {
+  // Values within a facet accumulate — picking two mechanics means "either" —
+  // and clicking a selected chip removes just that one.
+  const selected = (key: string) => {
+    const raw = params.get(key);
+    return raw ? raw.split(",").filter(Boolean) : [];
+  };
+
+  const toggle = (key: string, value: string) => {
     const next = new URLSearchParams(params);
-    if (value === null || next.get(key) === value) {
+    const current = selected(key);
+    const updated = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+
+    if (updated.length === 0) {
       next.delete(key);
     } else {
-      next.set(key, value);
+      next.set(key, updated.join(","));
     }
     next.delete("page");
     router.push(`/games?${next}`);
   };
+
+  // Sort stays single-select: a list has one order.
+  const applySort = (value: string) => {
+    const next = new URLSearchParams(params);
+    next.set("sort", value);
+    next.delete("page");
+    router.push(`/games?${next}`);
+  };
+
+  const clearAll = () => {
+    const next = new URLSearchParams(params);
+    for (const key of ["players", "maxTime", "mechanic", "detailed"]) next.delete(key);
+    next.delete("page");
+    router.push(`/games?${next}`);
+  };
+
+  const activeCount =
+    selected("players").length + selected("maxTime").length + selected("mechanic").length;
+
+  // Only the commonest mechanics are offered, so a chosen one can fall outside
+  // that list — arriving from a link, or after the counts shift. Showing it
+  // anyway keeps every active filter visible and, more importantly, removable.
+  const shownMechanics = [
+    ...selected("mechanic").filter((m) => !mechanics.includes(m)),
+    ...mechanics,
+  ];
 
   return (
     <div className="mt-6 flex flex-col gap-3">
@@ -41,8 +79,8 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
         {PLAYERS.map((n) => (
           <Chip
             key={n}
-            active={params.get("players") === String(n)}
-            onClick={() => apply("players", String(n))}
+            active={selected("players").includes(String(n))}
+            onClick={() => toggle("players", String(n))}
           >
             {n === 1 ? "Solo" : n === 6 ? "6+" : n}
           </Chip>
@@ -53,21 +91,21 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
         {LENGTHS.map((l) => (
           <Chip
             key={l.value}
-            active={params.get("maxTime") === l.value}
-            onClick={() => apply("maxTime", l.value)}
+            active={selected("maxTime").includes(l.value)}
+            onClick={() => toggle("maxTime", l.value)}
           >
             {l.label}
           </Chip>
         ))}
       </FilterRow>
 
-      {mechanics.length > 0 && (
+      {shownMechanics.length > 0 && (
         <FilterRow label="Plays like">
-          {mechanics.map((m) => (
+          {shownMechanics.map((m) => (
             <Chip
               key={m}
-              active={params.get("mechanic") === m}
-              onClick={() => apply("mechanic", m)}
+              active={selected("mechanic").includes(m)}
+              onClick={() => toggle("mechanic", m)}
             >
               {m}
             </Chip>
@@ -75,26 +113,27 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
         </FilterRow>
       )}
 
-      <FilterRow label="Detail">
-        <Chip
-          active={params.get("detailed") === "1"}
-          onClick={() => apply("detailed", "1")}
-        >
-          Only games with full details
-        </Chip>
-      </FilterRow>
-
       <FilterRow label="Sort">
         {SORTS.map((s) => (
           <Chip
             key={s.value}
             active={(params.get("sort") ?? "score") === s.value}
-            onClick={() => apply("sort", s.value)}
+            onClick={() => applySort(s.value)}
           >
             {s.label}
           </Chip>
         ))}
       </FilterRow>
+
+      {activeCount > 0 && (
+        <button
+          type="button"
+          onClick={clearAll}
+          className="self-start font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-faint transition-colors hover:text-meeple-amber"
+        >
+          Clear {activeCount} filter{activeCount === 1 ? "" : "s"} ×
+        </button>
+      )}
     </div>
   );
 }

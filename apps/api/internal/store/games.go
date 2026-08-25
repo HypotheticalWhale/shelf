@@ -12,9 +12,12 @@ import (
 
 // GameFilter describes a browse query. Zero values mean "no constraint".
 type GameFilter struct {
-	Query     string
-	Mechanic  string
-	Players   int
+	Query string
+	// Mechanics and Players are OR'd within themselves and AND'd against each
+	// other, which is how people read a set of filter chips: "worker placement
+	// or deck building, for two or four players".
+	Mechanics []string
+	Players   []int
 	MaxTime   int
 	MinWeight float64
 	MaxWeight float64
@@ -66,10 +69,23 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 		where = append(where, fmt.Sprintf(
 			"(g.name ILIKE '%%' || %s || '%%' OR g.name %% %s)", p, p))
 	}
-	if f.Players > 0 {
-		p := ph(f.Players)
-		where = append(where, fmt.Sprintf(
-			"(g.min_players <= %s AND g.max_players >= %s)", p, p))
+	if len(f.Players) > 0 {
+		var any []string
+		for _, n := range f.Players {
+			if n <= 0 {
+				continue
+			}
+			p := ph(n)
+			// The last chip is "6+", so treat it as "at least this many".
+			if n >= 6 {
+				any = append(any, fmt.Sprintf("(g.max_players >= %s)", p))
+			} else {
+				any = append(any, fmt.Sprintf("(g.min_players <= %s AND g.max_players >= %s)", p, p))
+			}
+		}
+		if len(any) > 0 {
+			where = append(where, "("+strings.Join(any, " OR ")+")")
+		}
 	}
 	if f.MaxTime > 0 {
 		where = append(where, fmt.Sprintf(
@@ -84,8 +100,17 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 	if f.DetailedOnly {
 		where = append(where, "(cardinality(g.mechanics) > 0 AND g.min_players IS NOT NULL)")
 	}
-	if m := strings.TrimSpace(f.Mechanic); m != "" {
-		where = append(where, fmt.Sprintf("(%s = ANY(g.mechanics))", ph(m)))
+	if len(f.Mechanics) > 0 {
+		clean := make([]string, 0, len(f.Mechanics))
+		for _, m := range f.Mechanics {
+			if m = strings.TrimSpace(m); m != "" {
+				clean = append(clean, m)
+			}
+		}
+		if len(clean) > 0 {
+			// && is array overlap: the game carries at least one of these.
+			where = append(where, fmt.Sprintf("(g.mechanics && %s)", ph(clean)))
+		}
 	}
 
 	whereSQL := ""

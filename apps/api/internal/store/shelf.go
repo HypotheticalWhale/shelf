@@ -72,6 +72,7 @@ func (s *Store) ListShelf(ctx context.Context, userID, status string, limit, off
 	const sql = `
 		SELECT si.status, si.created_at,
 		       g.id, g.slug, g.name, g.thumbnail_url, g.year_published,
+		       g.min_players, g.max_players, g.mechanics,
 		       COALESCE(gs.num_ratings, 0), COALESCE(gs.rating_sum, 0),
 		       gl.mean_rating, gl.prior_weight
 		  FROM shelf_items si
@@ -97,6 +98,7 @@ func (s *Store) ListShelf(ctx context.Context, userID, status string, limit, off
 		if err := rows.Scan(
 			&it.Status, &it.CreatedAt,
 			&g.ID, &g.Slug, &g.Name, &g.ThumbnailURL, &g.YearPublished,
+			&g.MinPlayers, &g.MaxPlayers, &g.Mechanics,
 			&g.NumRatings, &g.RatingSum,
 			&prior.MeanRating, &prior.PriorWeight,
 		); err != nil {

@@ -3,6 +3,7 @@ package httpx
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/auth"
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
@@ -15,6 +16,31 @@ func queryInt(r *http.Request, key string) int {
 		return 0
 	}
 	return n
+}
+
+// queryList reads a repeatable or comma-separated parameter, so both
+// ?mechanic=A&mechanic=B and ?mechanic=A,B work.
+func queryList(r *http.Request, key string) []string {
+	raw := r.URL.Query()[key]
+	out := make([]string, 0, len(raw))
+	for _, v := range raw {
+		for _, part := range strings.Split(v, ",") {
+			if part = strings.TrimSpace(part); part != "" {
+				out = append(out, part)
+			}
+		}
+	}
+	return out
+}
+
+func queryInts(r *http.Request, key string) []int {
+	var out []int
+	for _, v := range queryList(r, key) {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 func queryFloat(r *http.Request, key string) float64 {
@@ -30,9 +56,9 @@ func (s *Server) handleListGames(w http.ResponseWriter, r *http.Request) {
 
 	page, err := s.store.ListGames(r.Context(), store.GameFilter{
 		Query:        q.Get("q"),
-		Mechanic:     q.Get("mechanic"),
+		Mechanics:    queryList(r, "mechanic"),
 		DetailedOnly: q.Get("detailed") == "1",
-		Players:      queryInt(r, "players"),
+		Players:      queryInts(r, "players"),
 		MaxTime:      queryInt(r, "maxTime"),
 		MinWeight:    queryFloat(r, "minWeight"),
 		MaxWeight:    queryFloat(r, "maxWeight"),
