@@ -603,16 +603,18 @@ func TestMultiSelectFilters(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Selecting two player counts must widen the result, never narrow it.
-	if both.Total < two.Total || both.Total < five.Total {
-		t.Fatalf("2-or-5 (%d) is smaller than 2 alone (%d) or 5 alone (%d)",
+	// Player counts describe the group sizes to cover, so asking for two of
+	// them narrows: every result must seat both.
+	if both.Total > two.Total || both.Total > five.Total {
+		t.Fatalf("2-and-5 (%d) is wider than 2 alone (%d) or 5 alone (%d)",
 			both.Total, two.Total, five.Total)
 	}
+	if both.Total == 0 {
+		t.Fatal("no games seat both 2 and 5 players, which cannot be right")
+	}
 	for _, g := range both.Games {
-		okTwo := g.MinPlayers != nil && g.MaxPlayers != nil && *g.MinPlayers <= 2 && *g.MaxPlayers >= 2
-		okFive := g.MinPlayers != nil && g.MaxPlayers != nil && *g.MinPlayers <= 5 && *g.MaxPlayers >= 5
-		if !okTwo && !okFive {
-			t.Fatalf("%s supports neither 2 nor 5 players (%v-%v)", g.Name, g.MinPlayers, g.MaxPlayers)
+		if g.MinPlayers == nil || g.MaxPlayers == nil || *g.MinPlayers > 2 || *g.MaxPlayers < 5 {
+			t.Fatalf("%s cannot seat both 2 and 5 (%v-%v)", g.Name, g.MinPlayers, g.MaxPlayers)
 		}
 	}
 

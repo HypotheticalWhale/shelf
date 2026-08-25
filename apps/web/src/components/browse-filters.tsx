@@ -75,7 +75,14 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
 
   return (
     <div className="mt-6 flex flex-col gap-3">
-      <FilterRow label="Players">
+      <FilterRow
+        label="Players"
+        note={
+          selected("players").length > 1
+            ? `plays at ${[...selected("players")].sort((a, b) => Number(a) - Number(b)).join(" and ")}`
+            : undefined
+        }
+      >
         {PLAYERS.map((n) => (
           <Chip
             key={n}
@@ -138,7 +145,15 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
   );
 }
 
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterRow({
+  label,
+  note,
+  children,
+}: {
+  label: string;
+  note?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
       <span className="shrink-0 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-chalk-faint sm:w-[86px] sm:self-start sm:pt-1.5">

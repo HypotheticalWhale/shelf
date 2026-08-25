@@ -14,8 +14,9 @@ const PLAYERS = [1, 2, 3, 4, 5, 6];
  * round trip. Mechanics are drawn from the shelf itself rather than the whole
  * catalogue, so every chip is one that will actually match something.
  *
- * Within a facet the choices are OR'd — two mechanics means "either" — and the
- * facets combine, which is how a row of chips reads.
+ * Mechanics are OR'd — two of them means "either". Player counts are AND'd,
+ * because picking 2 and 4 asks for games that seat both, not games that seat
+ * one or the other.
  */
 export function ShelfFilters({
   owned,
@@ -51,11 +52,13 @@ export function ShelfFilters({
       if (!has) return false;
     }
     if (players.length > 0) {
-      const fits = players.some((n) => {
-        if (game.minPlayers == null || game.maxPlayers == null) return false;
-        return n >= 6 ? game.maxPlayers >= 6 : game.minPlayers <= n && game.maxPlayers >= n;
-      });
-      if (!fits) return false;
+      // Selecting counts describes the group sizes to cover, so the game has
+      // to seat all of them — its range only needs to reach the lowest and the
+      // highest asked for.
+      if (game.minPlayers == null || game.maxPlayers == null) return false;
+      const lo = Math.min(...players);
+      const hi = Math.max(...players);
+      if (game.minPlayers > lo || game.maxPlayers < hi) return false;
     }
     return true;
   };

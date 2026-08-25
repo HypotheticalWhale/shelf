@@ -13,9 +13,12 @@ import (
 // GameFilter describes a browse query. Zero values mean "no constraint".
 type GameFilter struct {
 	Query string
-	// Mechanics and Players are OR'd within themselves and AND'd against each
-	// other, which is how people read a set of filter chips: "worker placement
-	// or deck building, for two or four players".
+	// Mechanics are OR'd: any of these will do, which is how discovery works.
+	//
+	// Players are AND'd, because selecting counts describes the group sizes you
+	// need to cover, not alternatives. Picking 2 and 4 asks for games that play
+	// at both — a 3-5 player game satisfies neither reading of "or" that a
+	// person actually wants there.
 	Mechanics []string
 	Players   []int
 	MaxTime   int
@@ -70,23 +73,26 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 			"(g.name ILIKE '%%' || %s || '%%' OR g.name %% %s)", p, p))
 	}
 	if len(f.Players) > 0 {
-		var any []string
+		lo, hi := 0, 0
 		for _, n := range f.Players {
 			if n <= 0 {
 				continue
 			}
-			p := ph(n)
-			// The last chip is "6+", so treat it as "at least this many".
-			if n >= 6 {
-				any = append(any, fmt.Sprintf("(g.max_players >= %s)", p))
-			} else {
-				any = append(any, fmt.Sprintf("(g.min_players <= %s AND g.max_players >= %s)", p, p))
+			if lo == 0 || n < lo {
+				lo = n
+			}
+			if n > hi {
+				hi = n
 			}
 		}
-		if len(any) > 0 {
-			where = append(where, "("+strings.Join(any, " OR ")+")")
+		if lo > 0 {
+			// The game's range has to cover every count asked for, so it only
+			// needs to reach the lowest and the highest of them.
+			where = append(where, fmt.Sprintf(
+				"(g.min_players <= %s AND g.max_players >= %s)", ph(lo), ph(hi)))
 		}
 	}
+
 	if f.MaxTime > 0 {
 		where = append(where, fmt.Sprintf(
 			"(COALESCE(g.max_playtime, g.min_playtime) <= %s)", ph(f.MaxTime)))
