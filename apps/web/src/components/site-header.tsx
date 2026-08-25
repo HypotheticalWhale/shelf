@@ -5,7 +5,7 @@ import { SearchField } from "./search-field";
 
 export function SiteHeader() {
   return (
-    <header className="relative z-20 border-b border-rule-soft">
+    <header className="sticky top-0 z-40 border-b border-white/5 bg-felt-950/40 backdrop-blur-xl supports-[backdrop-filter]:bg-felt-950/25">
       <div className="mx-auto max-w-6xl px-5 h-16 flex items-center gap-6">
         <Link href="/" className="group flex items-center gap-2.5 shrink-0">
           <ShelfMark />
