@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/db"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/migrations"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/rating"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/seed"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/samueltansats/shelf/apps/api/internal/db"
-	"github.com/samueltansats/shelf/apps/api/internal/migrations"
-	"github.com/samueltansats/shelf/apps/api/internal/rating"
-	"github.com/samueltansats/shelf/apps/api/internal/seed"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
 )
 
 // These tests run against a real Postgres started for the package. The stats

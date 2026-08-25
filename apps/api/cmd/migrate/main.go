@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/samueltansats/shelf/apps/api/internal/config"
-	"github.com/samueltansats/shelf/apps/api/internal/db"
-	"github.com/samueltansats/shelf/apps/api/internal/migrations"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/config"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/db"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/migrations"
 )
 
 func main() {

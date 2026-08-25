@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/auth"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 	"github.com/go-chi/chi/v5"
-	"github.com/samueltansats/shelf/apps/api/internal/auth"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
 )
 
 func (s *Server) handleRecentPosts(w http.ResponseWriter, r *http.Request) {

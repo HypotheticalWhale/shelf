@@ -3,8 +3,8 @@ package httpx
 import (
 	"net/http"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/auth"
 	"github.com/go-chi/chi/v5"
-	"github.com/samueltansats/shelf/apps/api/internal/auth"
 )
 
 func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {

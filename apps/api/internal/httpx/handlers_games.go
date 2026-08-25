@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/auth"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 	"github.com/go-chi/chi/v5"
-	"github.com/samueltansats/shelf/apps/api/internal/auth"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
 )
 
 func queryInt(r *http.Request, key string) int {

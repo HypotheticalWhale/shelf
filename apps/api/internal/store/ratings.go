@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/rating"
 	"github.com/jackc/pgx/v5"
-	"github.com/samueltansats/shelf/apps/api/internal/rating"
 )
 
 // SetRating records a user's rating and returns the game with its updated

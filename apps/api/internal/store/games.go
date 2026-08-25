@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/rating"
 	"github.com/jackc/pgx/v5"
-	"github.com/samueltansats/shelf/apps/api/internal/rating"
 )
 
 // GameFilter describes a browse query. Zero values mean "no constraint".

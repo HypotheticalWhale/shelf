@@ -105,7 +105,7 @@ func (c *Client) get(ctx context.Context, path string, query url.Values) ([]byte
 			return nil, err
 		}
 		req.Header.Set("Authorization", "Bearer "+c.token)
-		req.Header.Set("User-Agent", "Shelf/1.0 (+https://github.com/samueltansats/shelf)")
+		req.Header.Set("User-Agent", "Shelf/1.0 (+https://github.com/HypotheticalWhale/shelf)")
 		req.Header.Set("Accept", "text/xml,application/xml")
 
 		resp, err := c.http.Do(req)

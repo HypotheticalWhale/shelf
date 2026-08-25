@@ -1,4 +1,4 @@
-module github.com/samueltansats/shelf/apps/api
+module github.com/HypotheticalWhale/shelf/apps/api
 
 go 1.26.2
 

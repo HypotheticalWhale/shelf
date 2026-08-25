@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/samueltansats/shelf/apps/api/internal/auth"
-	"github.com/samueltansats/shelf/apps/api/internal/rating"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/auth"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/rating"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 )
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

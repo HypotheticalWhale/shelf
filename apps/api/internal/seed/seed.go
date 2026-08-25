@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/samueltansats/shelf/apps/api/internal/store"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 )
 
 //go:embed games.json

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/samueltansats/shelf/apps/api/internal/bgg"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/bgg"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 )
 
 type Importer struct {

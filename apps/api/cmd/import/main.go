@@ -21,11 +21,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/samueltansats/shelf/apps/api/internal/config"
-	"github.com/samueltansats/shelf/apps/api/internal/db"
-	"github.com/samueltansats/shelf/apps/api/internal/importer"
-	"github.com/samueltansats/shelf/apps/api/internal/seed"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/config"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/db"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/importer"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/seed"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 )
 
 func main() {

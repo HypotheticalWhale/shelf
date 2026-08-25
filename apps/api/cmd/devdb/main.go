@@ -20,11 +20,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/db"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/migrations"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/seed"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-	"github.com/samueltansats/shelf/apps/api/internal/db"
-	"github.com/samueltansats/shelf/apps/api/internal/migrations"
-	"github.com/samueltansats/shelf/apps/api/internal/seed"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
 )
 
 func main() {

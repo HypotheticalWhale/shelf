@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 	"github.com/clerk/clerk-sdk-go/v2"
 	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
 	clerkuser "github.com/clerk/clerk-sdk-go/v2/user"
-	"github.com/samueltansats/shelf/apps/api/internal/store"
 )
 
 type ctxKey int

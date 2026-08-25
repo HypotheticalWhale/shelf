@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/samueltansats/shelf/apps/api/internal/rating"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/rating"
 )
 
 // ValidShelfStatus reports whether status is one Shelf recognises.
