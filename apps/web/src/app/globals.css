@@ -117,21 +117,6 @@ body::before {
 }
 .prose-shelf hr { border-color: var(--color-rule); margin: 2em 0; }
 
-/*
-  How far the landing's tabletop is scaled down to fit the viewport.
-
-  The table is drawn at a fixed 850px, so on a phone it crops to a meaningless
-  strip. A unitless ratio is required — `calc(100vw / 880)` divides a length by
-  a number and yields a length, which is invalid for `scale` and is dropped
-  silently — so the steps are set per breakpoint instead.
-*/
-:root { --table-fit: 1; }
-@media (max-width: 1000px) { :root { --table-fit: 0.82; } }
-@media (max-width: 860px)  { :root { --table-fit: 0.68; } }
-@media (max-width: 700px)  { :root { --table-fit: 0.55; } }
-@media (max-width: 560px)  { :root { --table-fit: 0.44; } }
-@media (max-width: 420px)  { :root { --table-fit: 0.36; } }
-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

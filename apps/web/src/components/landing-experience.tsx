@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useReducedMotion,
@@ -30,7 +30,32 @@ import type { Game } from "@/lib/types";
  */
 export function LandingExperience({ games }: { games: Game[] }) {
   const container = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+
+  // How far the tabletop has to shrink to fit the space it is given.
+  //
+  // The scene is drawn at a fixed 850x380 and cropped on anything narrower, but
+  // CSS cannot express the fit: `calc(100vw / 880)` divides a length by a number
+  // and yields a length, which `scale` rejects. Stepped breakpoints work but
+  // shrink the table on laptop windows that had room for it. Measuring gives a
+  // continuous fit that is exactly 1 whenever the scene already fits.
+  const [fit, setFit] = useState(1);
+
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      // Leave a margin so the table never touches the edges.
+      setFit(Math.min(1, (w - 32) / 880, (h * 0.62) / 380));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: container,
@@ -103,16 +128,21 @@ export function LandingExperience({ games }: { games: Game[] }) {
           rotateX flattens the table instead of tipping it away from the camera.
         */}
         <div
+          ref={stage}
           className="absolute inset-0"
           style={{
             perspective: "1200px",
             perspectiveOrigin: "50% 40%",
-            // The table is drawn at a fixed 850px. Rather than reflow every
-            // piece on it, scale the whole scene down to whatever width there
-            // is — a phone then sees the same tabletop, just smaller.
-            // --table-fit is set per breakpoint in globals.css; scale needs a
-            // unitless ratio, which calc() cannot derive from viewport units.
-            scale: "var(--table-fit)",
+            // The scene is drawn at a fixed 850x380, so it crops on anything
+            // narrower. The fit is measured rather than expressed in CSS —
+            // calc() cannot turn viewport units into the unitless ratio `scale`
+            // needs — and it sits on this wrapper rather than on the table
+            // itself, because motion writes `scale` inline there and an inline
+            // style wins. Here the two transforms compose.
+            //
+            // A string, not a number: React appends "px" to unknown numeric
+            // style values, and `scale: 0.41px` is invalid.
+            scale: String(fit),
           }}
         >
           <motion.div
