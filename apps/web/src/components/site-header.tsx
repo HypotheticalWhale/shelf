@@ -21,6 +21,11 @@ export function SiteHeader() {
           <Link href="/posts" className="hover:text-chalk transition-colors">
             Reading
           </Link>
+          <Show when="signed-in">
+            <Link href="/shelf" className="hover:text-chalk transition-colors">
+              My shelf
+            </Link>
+          </Show>
         </nav>
 
         <div className="flex-1 min-w-0">

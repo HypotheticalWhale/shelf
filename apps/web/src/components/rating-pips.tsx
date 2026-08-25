@@ -100,7 +100,7 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
         }
       }}
       className={cn(
-        "flex items-end gap-[3px] rounded-md",
+        "flex items-end rounded-md",
         busy && "opacity-70",
       )}
     >
@@ -108,7 +108,7 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
         const filled = shown !== null && value <= shown;
         const isChosen = rating === value;
         return (
-          <motion.button
+          <button
             key={value}
             type="button"
             role="radio"
@@ -118,21 +118,32 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
             onMouseEnter={() => setPreview(value)}
             onFocus={() => setPreview(value)}
             onClick={() => void commit(isChosen ? null : value)}
-            // A chosen pip seats itself with a small settle, like placing a cube.
-            animate={{ scaleY: isChosen ? 1 : filled ? 0.88 : 0.66 }}
-            whileHover={{ scaleY: 1 }}
-            whileTap={{ scaleY: 0.8 }}
-            transition={{ type: "spring", stiffness: 520, damping: 24 }}
-            style={{
-              originY: 1,
-              background: filled ? scoreColor(shown ?? value) : undefined,
-            }}
+            // The visible pip is deliberately slim, but a 10px target is far
+            // too small to hit: a near miss lands on the card behind it and
+            // opens the game instead of rating it, which reads as the control
+            // being broken. The button carries transparent padding so the tap
+            // area clears the 24px minimum while the bar stays thin.
             className={cn(
-              "rounded-cube cursor-pointer transition-colors",
-              tall ? "w-4 h-9" : "w-2.5 h-6",
-              !filled && "bg-felt-600 hover:bg-rule",
+              "group/pip flex items-end justify-center bg-transparent px-[3px] py-2.5 -my-2.5 cursor-pointer",
+              tall ? "w-[22px]" : "w-4",
             )}
-          />
+          >
+            <motion.span
+              aria-hidden
+              animate={{ scaleY: isChosen ? 1 : filled ? 0.88 : 0.66 }}
+              whileTap={{ scaleY: 0.8 }}
+              transition={{ type: "spring", stiffness: 520, damping: 24 }}
+              style={{
+                originY: 1,
+                background: filled ? scoreColor(shown ?? value) : undefined,
+              }}
+              className={cn(
+                "block w-full rounded-cube transition-colors",
+                tall ? "h-9" : "h-6",
+                !filled && "bg-felt-600 group-hover/pip:bg-rule",
+              )}
+            />
+          </button>
         );
       })}
 
@@ -162,9 +173,8 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
                   key={value}
                   className={cn(
                     "rounded-cube bg-felt-600 group-hover/pips:bg-rule transition-colors",
-                    tall ? "w-4 h-9" : "w-2.5 h-6",
+                    tall ? "w-[16px] h-9 mx-[3px]" : "w-2.5 h-6 mx-[3px]",
                   )}
-                  style={{ height: tall ? undefined : undefined }}
                 />
               ))}
               <span

@@ -43,6 +43,7 @@ func (s *Server) Handler() http.Handler {
 	r.Use(s.auth.Middleware)
 
 	r.Get("/health", s.handleHealth)
+	r.Get("/genres", s.handleGenres)
 
 	r.Route("/games", func(r chi.Router) {
 		r.Get("/", s.handleListGames)
@@ -88,6 +89,17 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	return r
+}
+
+// handleGenres lists the catalogue's most common genres, so filter controls
+// reflect what is actually there rather than a hardcoded guess.
+func (s *Server) handleGenres(w http.ResponseWriter, r *http.Request) {
+	genres, err := s.store.TopCategories(r.Context(), queryInt(r, "limit"))
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"genres": genres})
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {

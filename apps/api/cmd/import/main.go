@@ -1,7 +1,8 @@
 // Command import fills the catalogue from BoardGameGeek.
 //
 //	go run ./cmd/import -seed                      load the bundled 65 games
-//	go run ./cmd/import -catalogue -top 20000      broad import from public snapshots
+//	go run ./cmd/import -catalogue                 broad import from public snapshots
+//	go run ./cmd/import -prune-incomplete          drop games with no genre or players
 //	go run ./cmd/import -hot                       seed from BGG's hot list
 //	go run ./cmd/import -ids 174430,224517         import specific games
 //	go run ./cmd/import -sweep 1:200000 -min 750   discover popular games
@@ -35,6 +36,7 @@ func main() {
 		catalogueF = flag.Bool("catalogue", false, "bulk import from public BGG snapshots (no token needed)")
 		topN       = flag.Int("top", 0, "with -catalogue, import only the N highest-ranked games (0 = all)")
 		clearSeed  = flag.Bool("clear-seed", false, "delete catalogue rows still marked as seed data")
+		prune      = flag.Bool("prune-incomplete", false, "remove games with no genre or player count (keeps anything rated, shelved or written about)")
 		hot        = flag.Bool("hot", false, "import BGG's current hot list")
 		ids        = flag.String("ids", "", "comma-separated BGG IDs to import")
 		sweep      = flag.String("sweep", "", "BGG ID range to scan, as from:to")
@@ -65,7 +67,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	connectCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	connectCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 
 	pool, err := db.New(connectCtx, cfg.DatabaseURL)
@@ -101,6 +103,14 @@ func main() {
 
 	case *catalogueF:
 		res, err = im.ImportCatalogue(ctx, *topN)
+
+	case *prune:
+		var removed, kept int
+		removed, kept, err = st.DeleteIncompleteGames(ctx)
+		log.Printf("removed %d games with no genre or player count", removed)
+		if kept > 0 {
+			log.Printf("kept %d incomplete games that are rated, shelved or written about", kept)
+		}
 
 	case *clearSeed:
 		var removed int

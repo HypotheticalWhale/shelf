@@ -230,20 +230,27 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 	thumbs := make(map[int]string, len(ranked))
 	ranks := make(map[int]int, len(ranked))
 	inputs := make([]store.GameInput, 0, len(ranked))
-	enriched := 0
+	enriched, skipped := 0, 0
 	for _, e := range ranked {
+		// Without a genre and a player count an entry cannot be filtered,
+		// sorted or meaningfully displayed, so it is not worth importing.
+		x, hasDetail := extras[e.BGGID]
+		if !hasDetail || x.MinPlayers == nil || len(x.Categories) == 0 {
+			skipped++
+			continue
+		}
+
 		g := store.GameInput{
 			BGGID:         e.BGGID,
 			Name:          e.Name,
 			YearPublished: e.Year,
 			Source:        "seed",
 		}
-		if x, ok := extras[e.BGGID]; ok {
-			g.MinPlayers, g.MaxPlayers = x.MinPlayers, x.MaxPlayers
-			g.MinPlaytime, g.MaxPlaytime = x.MinPlaytime, x.MaxPlaytime
-			g.Categories, g.Mechanics, g.Designers = x.Categories, x.Mechanics, x.Designers
-			enriched++
-		}
+		g.MinPlayers, g.MaxPlayers = x.MinPlayers, x.MaxPlayers
+		g.MinPlaytime, g.MaxPlaytime = x.MinPlaytime, x.MaxPlaytime
+		g.Categories, g.Mechanics, g.Designers = x.Categories, x.Mechanics, x.Designers
+		enriched++
+
 		if e.Rank > 0 {
 			r := e.Rank
 			g.BGGRank = &r
@@ -255,7 +262,8 @@ func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, erro
 		}
 		inputs = append(inputs, g)
 	}
-	im.logf("%d of %d games have full metadata", enriched, len(inputs))
+	im.logf("%d importable with full metadata; %d skipped for missing genre or player count",
+		enriched, skipped)
 
 	written, err := im.store.InsertNewGames(ctx, inputs, func(done, total int) {
 		if done%4000 == 0 || done == total {

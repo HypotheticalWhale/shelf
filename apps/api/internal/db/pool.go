@@ -55,11 +55,23 @@ func newPool(ctx context.Context, databaseURL string, mode pgx.QueryExecMode, ma
 		return nil, fmt.Errorf("create pool: %w", err)
 	}
 
-	pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	if err := pool.Ping(pingCtx); err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("ping database: %w", err)
+	// Neon suspends idle compute, and waking it can take longer than a typical
+	// connect timeout — a cold start was failing CLI commands outright with
+	// "context deadline exceeded" while the endpoint was perfectly reachable.
+	// Retry briefly rather than giving up on the first slow handshake.
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		pingCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		err := pool.Ping(pingCtx)
+		cancel()
+		if err == nil {
+			return pool, nil
+		}
+		lastErr = err
+		if ctx.Err() != nil {
+			break
+		}
 	}
-	return pool, nil
+	pool.Close()
+	return nil, fmt.Errorf("ping database (the endpoint may be waking): %w", lastErr)
 }

@@ -21,7 +21,7 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
 	pool, err := db.NewForMigrations(ctx, cfg.MigrationURL)

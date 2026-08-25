@@ -403,3 +403,62 @@ func (s *Store) BackfillRanks(ctx context.Context, ranks map[int]int) (int, erro
 	}
 	return updated, nil
 }
+
+// DeleteIncompleteGames removes catalogue entries that carry no genre or no
+// player count.
+//
+// The public rankings snapshot lists far more games than the metadata snapshot
+// describes, so two thirds of a bulk import arrives as title-and-year only.
+// Those entries make browsing and filtering feel broken: a genre filter cannot
+// match them and a player filter silently excludes them.
+//
+// Anything a person has touched is kept regardless — a rating, a shelf entry or
+// a post anchors a game, and deleting it would take real user data with it.
+// Imported games with real detail are also kept, so this only ever removes
+// placeholder rows.
+func (s *Store) DeleteIncompleteGames(ctx context.Context) (removed, kept int, err error) {
+	const sql = `
+		DELETE FROM games g
+		 WHERE (cardinality(g.categories) = 0 OR g.min_players IS NULL)
+		   AND NOT EXISTS (SELECT 1 FROM ratings     r  WHERE r.game_id  = g.id)
+		   AND NOT EXISTS (SELECT 1 FROM shelf_items si WHERE si.game_id = g.id)
+		   AND NOT EXISTS (SELECT 1 FROM posts       p  WHERE p.game_id  = g.id)`
+
+	tag, err := s.pool.Exec(ctx, sql)
+	if err != nil {
+		return 0, 0, fmt.Errorf("delete incomplete games: %w", err)
+	}
+	removed = int(tag.RowsAffected())
+
+	if err := s.pool.QueryRow(ctx,
+		`SELECT count(*) FROM games
+		  WHERE cardinality(categories) = 0 OR min_players IS NULL`).Scan(&kept); err != nil {
+		return removed, 0, err
+	}
+	return removed, kept, nil
+}
+
+// TopCategories returns the most common genres, for building filter controls.
+func (s *Store) TopCategories(ctx context.Context, limit int) ([]string, error) {
+	if limit <= 0 || limit > 60 {
+		limit = 14
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT c FROM (SELECT unnest(categories) c FROM games) t
+		 GROUP BY c ORDER BY count(*) DESC LIMIT $1`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("top categories: %w", err)
+	}
+	defer rows.Close()
+
+	out := []string{}
+	for rows.Next() {
+		var c string
+		if err := rows.Scan(&c); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}

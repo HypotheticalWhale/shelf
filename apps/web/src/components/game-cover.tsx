@@ -57,34 +57,26 @@ export function GameCover({ name, slug, src, className, priority, full }: Props)
   if (src) {
     return (
       <div className={cn("relative overflow-hidden bg-felt-900", className)}>
-        {/* Blurred fill: the game's own colours, not a stand-in palette. */}
+        {/* A blurred copy fills any letterboxing with the game's own colours. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt=""
           aria-hidden
           loading={priority ? "eager" : "lazy"}
-          className="absolute inset-0 size-full object-cover scale-125 blur-2xl opacity-60 saturate-150"
+          className="absolute inset-0 size-full object-cover scale-125 blur-2xl opacity-70 saturate-150"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-felt-950/70 via-transparent to-felt-950/25" />
-
-        {/* The art itself, near its native size so it stays legible. */}
-        <div className="absolute inset-0 grid place-items-center p-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt=""
-            loading={priority ? "eager" : "lazy"}
-            style={{
-              width: full ? 128 : 68,
-              height: full ? 128 : 68,
-              // A little contrast back: scaling 64px up softens edges, and the
-              // blurred fill behind it washes out the midtones.
-              filter: "contrast(1.08) saturate(1.06)",
-            }}
-            className="rounded-[3px] object-cover shadow-xl shadow-felt-950/70 ring-1 ring-chalk/15"
-          />
-        </div>
+        {/* The cover itself, filling the frame. Only a 64px source is available
+            until a BGG token supplies real artwork, so it is upscaled — a
+            little extra contrast keeps the edges from going to mush. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt=""
+          loading={priority ? "eager" : "lazy"}
+          style={{ filter: "contrast(1.1) saturate(1.08)" }}
+          className="absolute inset-0 size-full object-cover"
+        />
       </div>
     );
   }

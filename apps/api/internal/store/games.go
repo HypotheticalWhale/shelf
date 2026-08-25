@@ -13,6 +13,7 @@ import (
 // GameFilter describes a browse query. Zero values mean "no constraint".
 type GameFilter struct {
 	Query     string
+	Category  string
 	Players   int
 	MaxTime   int
 	MinWeight float64
@@ -77,6 +78,9 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 	if f.MaxWeight > 0 {
 		where = append(where, fmt.Sprintf("(g.weight <= %s)", ph(f.MaxWeight)))
 	}
+	if c := strings.TrimSpace(f.Category); c != "" {
+		where = append(where, fmt.Sprintf("(%s = ANY(g.categories))", ph(c)))
+	}
 
 	whereSQL := ""
 	if len(where) > 0 {
@@ -88,7 +92,11 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 	// and without a tie-break "highest rated" is whatever Postgres scanned
 	// first. The rank is never shown as a score and never mixed into one; its
 	// influence disappears as soon as real ratings separate the games.
-	const tieBreak = ", g.bgg_rank ASC NULLS LAST, g.bgg_id ASC"
+	// Roughly two thirds of the catalogue is title-and-year only until a BGG
+	// import fills it in, so complete entries come first among equals. This
+	// changes ordering, never membership: nothing is hidden from browse or
+	// search.
+	const tieBreak = ", (g.min_players IS NOT NULL) DESC, g.bgg_rank ASC NULLS LAST, g.bgg_id ASC"
 
 	orderSQL := bayesOrder + " DESC NULLS LAST, gs.num_ratings DESC" + tieBreak
 	switch f.Sort {
@@ -107,6 +115,7 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 		SELECT g.id, g.bgg_id, g.slug, g.name, g.year_published,
 		       g.image_url, g.thumbnail_url,
 		       g.min_players, g.max_players, g.min_playtime, g.max_playtime, g.weight,
+		       g.categories,
 		       COALESCE(gs.num_ratings, 0), COALESCE(gs.rating_sum, 0),
 		       r.value,
 		       gl.mean_rating, gl.prior_weight,
@@ -135,6 +144,7 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 			&g.ID, &g.BGGID, &g.Slug, &g.Name, &g.YearPublished,
 			&g.ImageURL, &g.ThumbnailURL,
 			&g.MinPlayers, &g.MaxPlayers, &g.MinPlaytime, &g.MaxPlaytime, &g.Weight,
+			&g.Categories,
 			&g.NumRatings, &g.RatingSum,
 			&g.ViewerRating,
 			&prior.MeanRating, &prior.PriorWeight,
