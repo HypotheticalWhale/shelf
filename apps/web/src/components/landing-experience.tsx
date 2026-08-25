@@ -37,10 +37,13 @@ export function LandingExperience({ games }: { games: Game[] }) {
     offset: ["start start", "end start"],
   });
 
+  // Tracks the wheel closely rather than trailing it. The original spring was
+  // soft enough that the table kept moving after scrolling stopped, which read
+  // as lag rather than smoothing.
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 80,
-    damping: 25,
-    restDelta: 0.001,
+    stiffness: 220,
+    damping: 40,
+    restDelta: 0.0005,
   });
 
   const tableScale = useTransform(smoothProgress, [0, 0.35, 0.65], [1, 1.15, 4.5]);
@@ -50,6 +53,12 @@ export function LandingExperience({ games }: { games: Game[] }) {
   const heroOpacity = useTransform(smoothProgress, [0, 0.25, 0.45], [1, 1, 0]);
   const catalogueY = useTransform(smoothProgress, [0.4, 0.7, 1], [250, 0, 0]);
   const catalogueOpacity = useTransform(smoothProgress, [0.42, 0.62], [0, 1]);
+
+  // A layer faded to zero is still in the document: without this the catalogue
+  // cards sat invisibly over the hero and swallowed clicks meant for the page
+  // behind them, and the hero kept taking clicks once it had faded out.
+  const cataloguePointer = useTransform(catalogueOpacity, (o) => (o > 0.5 ? "auto" : "none"));
+  const heroPointer = useTransform(heroOpacity, (o) => (o > 0.5 ? "auto" : "none"));
 
   // One row only: the panel is pinned to the viewport, so a second row is
   // clipped by its lower edge rather than scrolling into view.
@@ -66,7 +75,11 @@ export function LandingExperience({ games }: { games: Game[] }) {
 
         {/* Hero copy */}
         <motion.div
-          style={{ opacity: reduced ? 1 : heroOpacity }}
+          style={{
+            opacity: reduced ? 1 : heroOpacity,
+            pointerEvents: reduced ? "auto" : heroPointer,
+            willChange: "opacity",
+          }}
           className="absolute left-1/2 top-[7%] z-20 w-full -translate-x-1/2 px-6 text-center"
         >
           <div className="mx-auto mb-5 w-fit rounded-full border border-amber-300/20 bg-amber-300/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-amber-200">
@@ -100,10 +113,11 @@ export function LandingExperience({ games }: { games: Game[] }) {
               rotateX: reduced ? 8 : tableRotateX,
               opacity: reduced ? 1 : tableOpacity,
               transformStyle: "preserve-3d",
+              willChange: "transform, opacity",
             }}
             className="absolute left-1/2 top-[70%] h-[380px] w-[850px] -translate-x-1/2 -translate-y-1/2"
           >
-            <div className="absolute -bottom-24 left-[5%] h-32 w-[90%] rounded-full bg-black/70 blur-3xl" />
+            <div className="absolute -bottom-20 left-[8%] h-24 w-[84%] rounded-full bg-black/60 blur-xl" />
 
             {/* Wooden frame */}
             <div className="absolute inset-0 rounded-[30px] border-[15px] border-[#704426] bg-[#a86c3d] shadow-[0_50px_120px_rgba(0,0,0,.65)]">
@@ -167,6 +181,8 @@ export function LandingExperience({ games }: { games: Game[] }) {
           style={{
             opacity: reduced ? 1 : catalogueOpacity,
             y: reduced ? 0 : catalogueY,
+            pointerEvents: reduced ? "auto" : cataloguePointer,
+            willChange: "transform, opacity",
           }}
           className="absolute inset-x-0 top-[6%] z-20 mx-auto w-full max-w-7xl px-6"
         >
@@ -190,7 +206,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
 
           <Link
             href="/games"
-            className="mb-8 flex items-center rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 backdrop-blur-xl transition hover:bg-white/[0.07]"
+            className="mb-8 flex items-center rounded-2xl border border-white/10 bg-[#221b14] px-5 py-4 transition hover:bg-[#2b231a]"
           >
             <span className="mr-3 text-white/30">⌕</span>
             <span className="text-sm text-white/30">
@@ -218,7 +234,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
                       full
                     />
                     {game.numRatings > 0 && (
-                      <div className="absolute right-4 top-4 rounded-full bg-black/40 px-2.5 py-1 text-xs font-bold text-white backdrop-blur">
+                      <div className="absolute right-4 top-4 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-white">
                         {game.score.toFixed(1)}
                       </div>
                     )}
