@@ -93,14 +93,35 @@ job, because the numbers cannot drift. `C` is refreshed hourly by cron.
 token issued when you register an application; unauthenticated requests return
 401 regardless of user agent.
 
-Shelf therefore ships a hand-curated catalogue of 65 well-known games so the
-site is usable immediately and local development never depends on an external
-API. Those rows are marked `source = 'seed'`.
+Shelf therefore builds its catalogue from two sources, neither of which needs a
+token. Both mark their rows `source = 'seed'`, and both key on `bgg_id`, so a
+real BGG import later reconciles every row in place rather than duplicating it.
 
-Titles, years, player counts, playtimes, designers, categories and mechanics are
-accurate. **Complexity weights are close community-consensus figures on BGG's
-1–5 scale, not exact values** — good enough to sort and filter by, and
-overwritten the moment a real import runs.
+**A hand-curated core of 65 well-known games** (`import -seed`) — accurate
+titles, years, player counts, playtimes, designers, categories and mechanics,
+plus BGG-scale complexity weights. This is the highest-quality data in the
+catalogue and a bulk import never overwrites it.
+
+**A bulk catalogue of ~31,000 games** (`import -catalogue`) from two published
+snapshots: a [daily rankings
+file](https://github.com/beefsack/bgg-ranking-historicals) for breadth and
+recency, and a 2016 metadata snapshot for player counts, playtime, categories
+and mechanics where the two overlap. Roughly a third of these carry full
+metadata; the rest have title and year until a BGG import fills them in.
+
+```bash
+go run ./cmd/import -catalogue            # everything (~31k)
+go run ./cmd/import -catalogue -top 5000  # highest-ranked only
+```
+
+Deliberately **not** imported from those snapshots: BGG's own ratings, which
+would make Shelf's own rankings meaningless; descriptions, which are members'
+copyrighted text; and images, since the rank file's thumbnails are 64×64 and the
+CDN's transforms are HMAC-signed, so no larger variant can be derived.
+
+For the curated 65, **complexity weights are close community-consensus figures
+on BGG's 1–5 scale, not exact values** — good enough to sort and filter by, and
+overwritten the moment a real import runs. The bulk catalogue has no weights.
 
 **Cover art is deliberately absent.** Box art is copyrighted and there is no
 freely-licensed bulk source: Wikipedia's covers are non-free fair-use files
