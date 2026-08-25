@@ -154,8 +154,14 @@ func (s *Store) CountGames(ctx context.Context) (int, error) {
 // StaleBGGIDs returns the games whose metadata was refreshed longest ago, so a
 // periodic job can keep the catalogue current without rescanning everything.
 func (s *Store) StaleBGGIDs(ctx context.Context, limit int) ([]int, error) {
-	if limit <= 0 || limit > 5000 {
+	// Refreshing the whole catalogue is a legitimate request — it is how every
+	// cover gets upgraded once a BGG token exists. Silently collapsing a large
+	// limit to 200 made that look like it had run when it had barely started.
+	if limit <= 0 {
 		limit = 200
+	}
+	if limit > 60000 {
+		limit = 60000
 	}
 
 	rows, err := s.pool.Query(ctx,

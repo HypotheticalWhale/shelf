@@ -11,7 +11,13 @@ type Props = {
   full?: boolean;
 };
 
-/** BGG's 64px crop, which must not be stretched across a whole card. */
+/**
+ * BGG's 64px crop, which must not be stretched across a whole card.
+ *
+ * The public snapshots publish only this size, and the CDN signs each
+ * transform — changing the dimensions, dropping the filters, or asking for an
+ * unsigned path all return 400. Real artwork only arrives with a BGG API token.
+ */
 function isMicroThumb(src: string) {
   return src.includes("__micro") || src.includes("fit-in/64x64");
 }
@@ -69,8 +75,14 @@ export function GameCover({ name, slug, src, className, priority, full }: Props)
             src={src}
             alt=""
             loading={priority ? "eager" : "lazy"}
-            style={{ width: full ? 160 : 78, height: full ? 160 : 78 }}
-            className="rounded-[3px] object-cover shadow-lg shadow-felt-950/60 ring-1 ring-chalk/10"
+            style={{
+              width: full ? 128 : 68,
+              height: full ? 128 : 68,
+              // A little contrast back: scaling 64px up softens edges, and the
+              // blurred fill behind it washes out the midtones.
+              filter: "contrast(1.08) saturate(1.06)",
+            }}
+            className="rounded-[3px] object-cover shadow-xl shadow-felt-950/70 ring-1 ring-chalk/15"
           />
         </div>
       </div>

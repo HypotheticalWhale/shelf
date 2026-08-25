@@ -149,6 +149,17 @@ BGG token. **Approval is manual and takes a few days**, so start it early:
 
 Then:
 
+Once the token is set, this upgrades every cover in the catalogue from the
+64x64 crop the public snapshots carry to BGG's real artwork, and replaces the
+approximate complexity weights with exact ones. It respects BGG's rate limit,
+so a full run over ~31,000 games takes roughly an hour:
+
+```bash
+go run ./cmd/import -refresh 31500
+```
+
+Other modes:
+
 ```bash
 cd apps/api
 go run ./cmd/import -hot                      # BGG's current hot list
