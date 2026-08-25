@@ -5,7 +5,7 @@ import { useState } from "react";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
 import { ScoreBadge } from "./score-badge";
-import { playerRange, playtime } from "@/lib/format";
+import { formatYear, playerRange, playtime } from "@/lib/format";
 import type { Game } from "@/lib/types";
 
 /**
@@ -18,7 +18,7 @@ import type { Game } from "@/lib/types";
 export function HeroRating({ game: initial }: { game: Game }) {
   const [game, setGame] = useState(initial);
 
-  const meta = [game.yearPublished, playerRange(game.minPlayers, game.maxPlayers), playtime(game.minPlaytime, game.maxPlaytime)]
+  const meta = [formatYear(game.yearPublished), playerRange(game.minPlayers, game.maxPlayers), playtime(game.minPlaytime, game.maxPlaytime)]
     .filter(Boolean)
     .join(" · ");
 

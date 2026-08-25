@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -23,8 +24,8 @@ type Config struct {
 
 func Load() (Config, error) {
 	c := Config{
-		DatabaseURL:    os.Getenv("DATABASE_URL"),
-		MigrationURL:   migrationURL(),
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+
 		ClerkSecretKey: os.Getenv("CLERK_SECRET_KEY"),
 		CronSecret:     os.Getenv("CRON_SECRET"),
 		BGGAPIToken:    os.Getenv("BGG_API_TOKEN"),
@@ -34,27 +35,48 @@ func Load() (Config, error) {
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("DATABASE_URL is required")
 	}
+	c.MigrationURL = migrationURL(c.DatabaseURL)
 	if c.MigrationURL == "" {
 		c.MigrationURL = c.DatabaseURL
 	}
 	return c, nil
 }
 
-// migrationURL picks a direct connection for schema changes.
+// migrationURL derives a direct (non-pooled) connection from databaseURL.
 //
 // Neon's DATABASE_URL points at its PgBouncer pooler in transaction mode, where
-// a connection is handed back to the pool between statements. The migrator
-// holds a session-level pg_advisory_lock across the whole run, and a session
-// that does not survive between statements cannot hold one — the lock could be
-// taken on one backend and released on another, letting two deploys migrate at
-// once. Neon publishes an unpooled endpoint for exactly this, so prefer it.
-func migrationURL() string {
-	for _, key := range []string{"DATABASE_URL_UNPOOLED", "POSTGRES_URL_NON_POOLING", "MIGRATION_DATABASE_URL"} {
-		if v := os.Getenv(key); v != "" {
-			return v
-		}
+// a connection returns to the pool between statements. The migrator holds a
+// session-level pg_advisory_lock across the whole run, and a session that does
+// not survive between statements cannot hold one — the lock could be taken on
+// one backend and released on another, letting two deploys migrate at once.
+//
+// The direct endpoint is derived from the pooled one by dropping "-pooler" from
+// the host rather than read from a separate environment variable. Reading
+// DATABASE_URL_UNPOOLED independently meant that overriding DATABASE_URL — to
+// point at a local database, say — left migrations still aimed at whatever the
+// env file described, silently migrating the wrong database. Deriving it keeps
+// the two in lockstep by construction.
+//
+// MIGRATION_DATABASE_URL overrides this for setups that publish an unrelated
+// direct endpoint.
+func migrationURL(databaseURL string) string {
+	if v := os.Getenv("MIGRATION_DATABASE_URL"); v != "" {
+		return v
 	}
-	return ""
+	if databaseURL == "" {
+		return ""
+	}
+
+	u, err := url.Parse(databaseURL)
+	if err != nil || u.Host == "" {
+		return databaseURL
+	}
+	if !strings.Contains(u.Host, "-pooler") {
+		return databaseURL // already direct, or not a pooled provider
+	}
+
+	u.Host = strings.Replace(u.Host, "-pooler", "", 1)
+	return u.String()
 }
 
 func envOr(key, fallback string) string {

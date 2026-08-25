@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
 import { ScoreBadge } from "./score-badge";
-import { playerRange, playtime } from "@/lib/format";
+import { formatYear, playerRange, playtime } from "@/lib/format";
 import type { Game } from "@/lib/types";
 
 /**
@@ -46,7 +46,7 @@ export function GameCard({ game: initial, index = 0 }: { game: Game; index?: num
             </h3>
           </Link>
           <p className="mt-1 font-mono text-[11px] text-chalk-faint truncate">
-            {[game.yearPublished, players, time].filter(Boolean).join(" · ")}
+            {[formatYear(game.yearPublished), players, time].filter(Boolean).join(" · ")}
           </p>
         </div>
 

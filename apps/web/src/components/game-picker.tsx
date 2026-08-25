@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/lib/client";
-import { cn } from "@/lib/format";
+import { cn, formatYear } from "@/lib/format";
 import type { Game, GamePage } from "@/lib/types";
 
 type Props = {
@@ -101,7 +101,7 @@ export function GamePicker({ defaultSlug, onChange }: Props) {
           {selected.name}
           {selected.yearPublished && (
             <span className="font-mono text-[11px] text-chalk-faint">
-              {selected.yearPublished}
+              {formatYear(selected.yearPublished)}
             </span>
           )}
           <button
@@ -147,7 +147,7 @@ export function GamePicker({ defaultSlug, onChange }: Props) {
               >
                 <span className="truncate">{game.name}</span>
                 <span className="font-mono text-[11px] text-chalk-faint shrink-0">
-                  {game.yearPublished ?? ""}
+                  {formatYear(game.yearPublished) ?? ""}
                 </span>
               </button>
             </li>

@@ -507,3 +507,77 @@ func TestPostsAndDraftVisibility(t *testing.T) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// TestDeletingARatedGameCascades covers the trigger's delete path.
+//
+// Cascading from games to ratings fires the stats trigger, which used to
+// re-insert the game_stats row it was about to lose and trip the foreign key,
+// making any rated game impossible to delete.
+func TestDeletingARatedGameCascades(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+	reset(t, ctx)
+	seedCatalogue(t, ctx, st)
+
+	if _, err := st.EnsureUser(ctx, "deleter_1", "deleter", "Deleter", ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.SetRating(ctx, "deleter_1", "hive", 8); err != nil {
+		t.Fatal(err)
+	}
+
+	var gameID int64
+	if err := testPool.QueryRow(ctx, `SELECT id FROM games WHERE slug = 'hive'`).Scan(&gameID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := testPool.Exec(ctx, `DELETE FROM games WHERE id = $1`, gameID); err != nil {
+		t.Fatalf("deleting a rated game failed: %v", err)
+	}
+
+	for _, q := range []string{
+		`SELECT count(*) FROM ratings    WHERE game_id = $1`,
+		`SELECT count(*) FROM game_stats WHERE game_id = $1`,
+	} {
+		var n int
+		if err := testPool.QueryRow(ctx, q, gameID).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if n != 0 {
+			t.Errorf("%s left %d rows behind", q, n)
+		}
+	}
+}
+
+// TestClearSeedRemovesEverySeededGame exercises the same path in bulk.
+func TestClearSeedRemovesEverySeededGame(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+	reset(t, ctx)
+	seedCatalogue(t, ctx, st)
+
+	if _, err := st.EnsureUser(ctx, "clear_1", "clearer", "Clearer", ""); err != nil {
+		t.Fatal(err)
+	}
+	for _, slug := range []string{"catan", "azul", "root"} {
+		if _, err := st.SetRating(ctx, "clear_1", slug, 7); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	removed, err := st.DeleteSeedGames(ctx)
+	if err != nil {
+		t.Fatalf("clear seed: %v", err)
+	}
+	if removed < 50 {
+		t.Fatalf("removed only %d seed games", removed)
+	}
+
+	left, err := st.CountGames(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left != 0 {
+		t.Errorf("%d games survived a full seed clear", left)
+	}
+}

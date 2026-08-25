@@ -1,6 +1,7 @@
 // Command import fills the catalogue from BoardGameGeek.
 //
-//	go run ./cmd/import -seed                      load the bundled catalogue
+//	go run ./cmd/import -seed                      load the bundled 65 games
+//	go run ./cmd/import -catalogue -top 20000      broad import from public snapshots
 //	go run ./cmd/import -hot                       seed from BGG's hot list
 //	go run ./cmd/import -ids 174430,224517         import specific games
 //	go run ./cmd/import -sweep 1:200000 -min 750   discover popular games
@@ -30,7 +31,9 @@ import (
 
 func main() {
 	var (
-		useSeed    = flag.Bool("seed", false, "load the bundled catalogue (no BGG token needed)")
+		useSeed    = flag.Bool("seed", false, "load the bundled 65-game catalogue (no BGG token needed)")
+		catalogueF = flag.Bool("catalogue", false, "bulk import from public BGG snapshots (no token needed)")
+		topN       = flag.Int("top", 0, "with -catalogue, import only the N highest-ranked games (0 = all)")
 		clearSeed  = flag.Bool("clear-seed", false, "delete catalogue rows still marked as seed data")
 		hot        = flag.Bool("hot", false, "import BGG's current hot list")
 		ids        = flag.String("ids", "", "comma-separated BGG IDs to import")
@@ -95,6 +98,9 @@ func main() {
 		var written int
 		written, err = st.UpsertGames(ctx, games)
 		res = importer.Result{Requested: len(games), Fetched: len(games), Written: written}
+
+	case *catalogueF:
+		res, err = im.ImportCatalogue(ctx, *topN)
 
 	case *clearSeed:
 		var removed int

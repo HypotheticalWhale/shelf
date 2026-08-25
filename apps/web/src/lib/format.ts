@@ -66,6 +66,17 @@ export function initials(name: string): string {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
+/**
+ * Publication year, handling the ancient games in the catalogue.
+ *
+ * Senet, Backgammon and Go predate the common era, and BGG stores those as
+ * negative years. Printing "-3000" looks like a bug, so render the era.
+ */
+export function formatYear(year: number | null): string | null {
+  if (year === null || year === 0) return null;
+  return year < 0 ? `${Math.abs(year)} BC` : String(year);
+}
+
 export function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-GB", {

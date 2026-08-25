@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // GameInput is a game ready to be written. It mirrors what the BGG importer
@@ -184,4 +185,131 @@ func (s *Store) DeleteSeedGames(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("delete seed games: %w", err)
 	}
 	return int(tag.RowsAffected()), nil
+}
+
+// InsertNewGames adds games that are not in the catalogue yet, leaving existing
+// rows completely untouched.
+//
+// This is the bulk path: tens of thousands of rows, where the per-row upsert
+// used by the BGG importer would mean tens of thousands of round trips. Slugs
+// are made unique in Go against the slugs already in the database, so a batch
+// cannot fail on a collision, and the insert still carries ON CONFLICT DO
+// NOTHING so a concurrent run is harmless.
+//
+// Existing rows are skipped rather than updated on purpose: the hand-curated
+// games carry better tagging and complexity weights than a bulk snapshot, and
+// a broad import must not overwrite them.
+func (s *Store) InsertNewGames(ctx context.Context, games []GameInput, progress func(done, total int)) (int, error) {
+	existingIDs, existingSlugs, err := s.catalogueKeys(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	type row struct {
+		g    GameInput
+		slug string
+	}
+
+	pending := make([]row, 0, len(games))
+	for _, g := range games {
+		if g.BGGID <= 0 || g.Name == "" || existingIDs[g.BGGID] {
+			continue
+		}
+
+		base := Slugify(g.Name)
+		slug := base
+		if existingSlugs[slug] {
+			if g.YearPublished != nil && *g.YearPublished > 0 {
+				slug = fmt.Sprintf("%s-%d", base, *g.YearPublished)
+			}
+			if existingSlugs[slug] {
+				slug = base + "-" + strconv.Itoa(g.BGGID)
+			}
+		}
+		if existingSlugs[slug] {
+			continue // three collisions on one title is not worth a fourth guess
+		}
+
+		existingSlugs[slug] = true
+		existingIDs[g.BGGID] = true
+		pending = append(pending, row{g: g, slug: slug})
+	}
+
+	const chunk = 400
+	written := 0
+
+	for start := 0; start < len(pending); start += chunk {
+		end := min(start+chunk, len(pending))
+		batch := pending[start:end]
+
+		var sb strings.Builder
+		sb.WriteString(`INSERT INTO games (bgg_id, slug, name, year_published,
+			min_players, max_players, min_playtime, max_playtime,
+			designers, categories, mechanics, source, imported_at) VALUES `)
+
+		args := make([]any, 0, len(batch)*12)
+		for i, r := range batch {
+			if i > 0 {
+				sb.WriteString(",")
+			}
+			n := i * 12
+			fmt.Fprintf(&sb, "($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d, now())",
+				n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10, n+11, n+12)
+
+			source := r.g.Source
+			if source == "" {
+				source = "seed"
+			}
+			args = append(args,
+				r.g.BGGID, r.slug, r.g.Name, r.g.YearPublished,
+				r.g.MinPlayers, r.g.MaxPlayers, r.g.MinPlaytime, r.g.MaxPlaytime,
+				// These columns are NOT NULL DEFAULT '{}'; a nil Go slice sends
+				// NULL, not an empty array, so most games would be rejected.
+				emptyIfNil(r.g.Designers), emptyIfNil(r.g.Categories), emptyIfNil(r.g.Mechanics),
+				source,
+			)
+		}
+		sb.WriteString(" ON CONFLICT DO NOTHING")
+
+		tag, err := s.pool.Exec(ctx, sb.String(), args...)
+		if err != nil {
+			return written, fmt.Errorf("insert games %d-%d: %w", start, end, err)
+		}
+		written += int(tag.RowsAffected())
+
+		if progress != nil {
+			progress(end, len(pending))
+		}
+	}
+	return written, nil
+}
+
+// catalogueKeys loads the bgg ids and slugs already in use.
+func (s *Store) catalogueKeys(ctx context.Context) (map[int]bool, map[string]bool, error) {
+	rows, err := s.pool.Query(ctx, `SELECT bgg_id, slug FROM games`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read catalogue keys: %w", err)
+	}
+	defer rows.Close()
+
+	ids := make(map[int]bool, 4096)
+	slugs := make(map[string]bool, 4096)
+	for rows.Next() {
+		var id int
+		var slug string
+		if err := rows.Scan(&id, &slug); err != nil {
+			return nil, nil, err
+		}
+		ids[id] = true
+		slugs[slug] = true
+	}
+	return ids, slugs, rows.Err()
+}
+
+// emptyIfNil keeps a nil slice from being written as SQL NULL.
+func emptyIfNil(v []string) []string {
+	if v == nil {
+		return []string{}
+	}
+	return v
 }

@@ -4,7 +4,7 @@ import { apiGetOrNull, apiGet } from "@/lib/api";
 import { GameCover } from "@/components/game-cover";
 import { GamePanel } from "@/components/game-panel";
 import { PostRow } from "@/components/post-row";
-import { playerRange, playtime, weightLabel } from "@/lib/format";
+import { formatYear, playerRange, playtime, weightLabel } from "@/lib/format";
 import type { GameDetail, Post } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/games/[slug]">) {
@@ -28,7 +28,7 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
       "Complexity",
       game.weight ? `${game.weight.toFixed(1)} · ${weightLabel(game.weight)}` : null,
     ],
-    ["Published", game.yearPublished ? String(game.yearPublished) : null],
+    ["Published", formatYear(game.yearPublished)],
     ["Designer", game.designers?.slice(0, 2).join(", ") || null],
   ].filter(([, value]) => Boolean(value)) as [string, string][];
 

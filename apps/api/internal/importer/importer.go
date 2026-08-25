@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/bgg"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/catalogue"
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 )
 
@@ -185,3 +187,76 @@ func toInput(g bgg.Game) store.GameInput {
 
 // HasToken reports whether BGG imports are possible with the current config.
 func (im *Importer) HasToken() bool { return im.client.HasToken() }
+
+// ImportCatalogue builds a broad catalogue from published BGG snapshots.
+//
+// topN limits the import to the highest-ranked games (0 imports everything).
+// Games already present are skipped, so the curated entries keep their better
+// tagging and weights, and a re-run only adds what is new.
+func (im *Importer) ImportCatalogue(ctx context.Context, topN int) (Result, error) {
+	c := catalogue.NewClient()
+	c.Logf = im.Logf
+
+	ranked, err := c.FetchRanked(ctx)
+	if err != nil {
+		return Result{}, err
+	}
+	im.logf("rankings snapshot holds %d games", len(ranked))
+
+	// Rank 0 means unranked; sort those to the back so -top takes real ranks.
+	sort.SliceStable(ranked, func(a, b int) bool {
+		ra, rb := ranked[a].Rank, ranked[b].Rank
+		if ra == 0 {
+			return false
+		}
+		if rb == 0 {
+			return true
+		}
+		return ra < rb
+	})
+	if topN > 0 && topN < len(ranked) {
+		ranked = ranked[:topN]
+	}
+
+	extras, err := c.FetchExtras(ctx)
+	if err != nil {
+		// Detail is a bonus; breadth is the point. Carry on without it.
+		im.logf("metadata snapshot unavailable (%v) — importing names and years only", err)
+		extras = map[int]catalogue.Extra{}
+	} else {
+		im.logf("metadata snapshot holds %d games", len(extras))
+	}
+
+	inputs := make([]store.GameInput, 0, len(ranked))
+	enriched := 0
+	for _, e := range ranked {
+		g := store.GameInput{
+			BGGID:         e.BGGID,
+			Name:          e.Name,
+			YearPublished: e.Year,
+			Source:        "seed",
+		}
+		if x, ok := extras[e.BGGID]; ok {
+			g.MinPlayers, g.MaxPlayers = x.MinPlayers, x.MaxPlayers
+			g.MinPlaytime, g.MaxPlaytime = x.MinPlaytime, x.MaxPlaytime
+			g.Categories, g.Mechanics, g.Designers = x.Categories, x.Mechanics, x.Designers
+			enriched++
+		}
+		inputs = append(inputs, g)
+	}
+	im.logf("%d of %d games have full metadata", enriched, len(inputs))
+
+	written, err := im.store.InsertNewGames(ctx, inputs, func(done, total int) {
+		if done%4000 == 0 || done == total {
+			im.logf("inserted %d/%d", done, total)
+		}
+	})
+
+	res := Result{
+		Requested: len(inputs),
+		Fetched:   len(inputs),
+		Written:   written,
+		Skipped:   len(inputs) - written,
+	}
+	return res, err
+}
