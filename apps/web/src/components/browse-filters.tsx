@@ -93,7 +93,7 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-chalk-faint w-14 shrink-0">
+      <span className="w-[68px] shrink-0 self-start pt-1.5 font-mono text-[10px] uppercase leading-tight tracking-[0.16em] text-chalk-faint">
         {label}
       </span>
       <div className="flex gap-1.5 flex-wrap">{children}</div>
