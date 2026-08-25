@@ -19,14 +19,14 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
     limit: String(PAGE_SIZE),
     offset: String((page - 1) * PAGE_SIZE),
   });
-  for (const key of ["q", "players", "maxTime", "sort", "category"]) {
+  for (const key of ["q", "players", "maxTime", "sort", "mechanic"]) {
     const value = get(key);
     if (value) query.set(key, value);
   }
 
-  const [result, genreList] = await Promise.all([
+  const [result, mechanicList] = await Promise.all([
     apiGet<GamePage>(`/games?${query}`, { authenticated: true }),
-    apiGet<{ genres: string[] }>("/genres?limit=14", { revalidate: 3600 }),
+    apiGet<{ mechanics: string[] }>("/mechanics?limit=14", { revalidate: 3600 }),
   ]);
   const lastPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
 
@@ -35,7 +35,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display font-800 text-4xl tracking-[-0.03em]">
-            {get("q") ? `“${get("q")}”` : (get("category") ?? "Every game")}
+            {get("q") ? `“${get("q")}”` : (get("mechanic") ?? "Every game")}
           </h1>
           <p className="mt-1.5 font-mono text-xs text-chalk-faint">
             {result.total} {result.total === 1 ? "game" : "games"}
@@ -43,7 +43,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
         </div>
       </header>
 
-      <BrowseFilters genres={genreList.genres} />
+      <BrowseFilters mechanics={mechanicList.mechanics} />
 
       {result.games.length === 0 ? (
         <div className="mt-16 text-center">

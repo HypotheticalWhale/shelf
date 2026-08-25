@@ -30,7 +30,7 @@ func (s *Server) handleListGames(w http.ResponseWriter, r *http.Request) {
 
 	page, err := s.store.ListGames(r.Context(), store.GameFilter{
 		Query:     q.Get("q"),
-		Category:  q.Get("category"),
+		Mechanic:  q.Get("mechanic"),
 		Players:   queryInt(r, "players"),
 		MaxTime:   queryInt(r, "maxTime"),
 		MinWeight: queryFloat(r, "minWeight"),

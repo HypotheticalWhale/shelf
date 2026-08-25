@@ -67,3 +67,17 @@ func itoa(v int) string {
 	}
 	return string(b)
 }
+
+func TestSplitListNormalisesAndDropsJunk(t *testing.T) {
+	got := splitList("Deck / Pool Building,NA,Co-operative Play,Card Drafting,,Deck / Pool Building")
+	want := []string{"Deck Building", "Cooperative Game", "Open Drafting"}
+
+	if len(got) != len(want) {
+		t.Fatalf("splitList = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("splitList = %v, want %v", got, want)
+		}
+	}
+}

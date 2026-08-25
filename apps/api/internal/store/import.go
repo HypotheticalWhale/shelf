@@ -438,17 +438,20 @@ func (s *Store) DeleteIncompleteGames(ctx context.Context) (removed, kept int, e
 	return removed, kept, nil
 }
 
-// TopCategories returns the most common genres, for building filter controls.
-func (s *Store) TopCategories(ctx context.Context, limit int) ([]string, error) {
+// TopMechanics returns the most common gameplay mechanics, for building filter
+// controls. Mechanics describe how a game plays — worker placement, deck
+// building, trick-taking — which is what people actually browse by; categories
+// describe theme, which is a much weaker filter.
+func (s *Store) TopMechanics(ctx context.Context, limit int) ([]string, error) {
 	if limit <= 0 || limit > 60 {
 		limit = 14
 	}
 
 	rows, err := s.pool.Query(ctx, `
-		SELECT c FROM (SELECT unnest(categories) c FROM games) t
-		 GROUP BY c ORDER BY count(*) DESC LIMIT $1`, limit)
+		SELECT m FROM (SELECT unnest(mechanics) m FROM games) t
+		 GROUP BY m ORDER BY count(*) DESC LIMIT $1`, limit)
 	if err != nil {
-		return nil, fmt.Errorf("top categories: %w", err)
+		return nil, fmt.Errorf("top mechanics: %w", err)
 	}
 	defer rows.Close()
 

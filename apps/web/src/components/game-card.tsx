@@ -48,9 +48,9 @@ export function GameCard({ game: initial, index = 0 }: { game: Game; index?: num
           <p className="mt-1 font-mono text-[11px] text-chalk-faint truncate">
             {[formatYear(game.yearPublished), players, time].filter(Boolean).join(" · ")}
           </p>
-          {game.categories && game.categories.length > 0 && (
-            <p className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-meeple-teal truncate">
-              {game.categories.slice(0, 2).join(" · ")}
+          {game.mechanics && game.mechanics.length > 0 && (
+            <p className="mt-1.5 truncate font-mono text-[10px] uppercase tracking-wider text-meeple-teal">
+              {game.mechanics.slice(0, 2).join(" · ")}
             </p>
           )}
         </div>

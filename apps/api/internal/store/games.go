@@ -13,7 +13,7 @@ import (
 // GameFilter describes a browse query. Zero values mean "no constraint".
 type GameFilter struct {
 	Query     string
-	Category  string
+	Mechanic  string
 	Players   int
 	MaxTime   int
 	MinWeight float64
@@ -78,8 +78,8 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 	if f.MaxWeight > 0 {
 		where = append(where, fmt.Sprintf("(g.weight <= %s)", ph(f.MaxWeight)))
 	}
-	if c := strings.TrimSpace(f.Category); c != "" {
-		where = append(where, fmt.Sprintf("(%s = ANY(g.categories))", ph(c)))
+	if m := strings.TrimSpace(f.Mechanic); m != "" {
+		where = append(where, fmt.Sprintf("(%s = ANY(g.mechanics))", ph(m)))
 	}
 
 	whereSQL := ""
@@ -115,7 +115,7 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 		SELECT g.id, g.bgg_id, g.slug, g.name, g.year_published,
 		       g.image_url, g.thumbnail_url,
 		       g.min_players, g.max_players, g.min_playtime, g.max_playtime, g.weight,
-		       g.categories,
+		       g.categories, g.mechanics,
 		       COALESCE(gs.num_ratings, 0), COALESCE(gs.rating_sum, 0),
 		       r.value,
 		       gl.mean_rating, gl.prior_weight,
@@ -144,7 +144,7 @@ func (s *Store) ListGames(ctx context.Context, f GameFilter) (GamePage, error) {
 			&g.ID, &g.BGGID, &g.Slug, &g.Name, &g.YearPublished,
 			&g.ImageURL, &g.ThumbnailURL,
 			&g.MinPlayers, &g.MaxPlayers, &g.MinPlaytime, &g.MaxPlaytime, &g.Weight,
-			&g.Categories,
+			&g.Categories, &g.Mechanics,
 			&g.NumRatings, &g.RatingSum,
 			&g.ViewerRating,
 			&prior.MeanRating, &prior.PriorWeight,

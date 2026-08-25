@@ -20,7 +20,7 @@ const SORTS = [
  * Filters are chips rather than dropdowns: every option is visible, one click
  * applies it, and a second click clears it. Nothing to open, nothing to submit.
  */
-export function BrowseFilters({ genres }: { genres: string[] }) {
+export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -61,15 +61,15 @@ export function BrowseFilters({ genres }: { genres: string[] }) {
         ))}
       </FilterRow>
 
-      {genres.length > 0 && (
-        <FilterRow label="Genre">
-          {genres.map((g) => (
+      {mechanics.length > 0 && (
+        <FilterRow label="Plays like">
+          {mechanics.map((m) => (
             <Chip
-              key={g}
-              active={params.get("category") === g}
-              onClick={() => apply("category", g)}
+              key={m}
+              active={params.get("mechanic") === m}
+              onClick={() => apply("mechanic", m)}
             >
-              {g}
+              {m}
             </Chip>
           ))}
         </FilterRow>

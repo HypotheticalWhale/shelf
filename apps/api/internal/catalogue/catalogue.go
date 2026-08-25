@@ -252,6 +252,34 @@ func atoiPtr(s string) *int {
 	return &n
 }
 
+// normaliseTag maps the 2016 snapshot's tag names onto BoardGameGeek's current
+// vocabulary, so a later import with a real token does not introduce a third
+// set of names for the same ideas. Mirrors migration 0007.
+var tagAliases = map[string]string{
+	"Deck / Pool Building":          "Deck Building",
+	"Deck, Bag, and Pool Building":  "Deck Building",
+	"Co-operative Play":             "Cooperative Game",
+	"Area Control / Area Influence": "Area Majority",
+	"Area Majority / Influence":     "Area Majority",
+	"Press Your Luck":               "Push Your Luck",
+	"Action Point Allowance System": "Action Points",
+	"Card Drafting":                 "Open Drafting",
+	"Route/Network Building":        "Network Building",
+	"Network and Route Building":    "Network Building",
+	"Hex-and-Counter":               "Hexagon Grid",
+	"Partnerships":                  "Team-Based Game",
+	"Secret Unit Deployment":        "Hidden Movement",
+	"Campaign / Battle Card Driven": "Card Driven",
+	"Area Enclosure":                "Enclosure",
+}
+
+func normaliseTag(t string) string {
+	if v, ok := tagAliases[t]; ok {
+		return v
+	}
+	return t
+}
+
 func splitList(s string) []string {
 	if strings.TrimSpace(s) == "" {
 		return nil
@@ -260,8 +288,10 @@ func splitList(s string) []string {
 	out := make([]string, 0, len(parts))
 	seen := map[string]bool{}
 	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" || seen[p] {
+		p = normaliseTag(strings.TrimSpace(p))
+		// "NA" is the snapshot's placeholder for "no tags recorded"; carrying
+		// it through would put it in the filter list as if it were a mechanic.
+		if p == "" || p == "NA" || seen[p] {
 			continue
 		}
 		seen[p] = true
