@@ -10,8 +10,10 @@ import (
 
 type Config struct {
 	DatabaseURL string
-	// MigrationURL is a direct (non-pooled) connection used for schema work.
-	MigrationURL   string
+	// DirectURL is a non-pooled connection. Schema changes need it for their
+	// session-level advisory lock, and LISTEN/NOTIFY needs it because a
+	// transaction pooler drops the subscription between statements.
+	DirectURL      string
 	ClerkSecretKey string
 	CronSecret     string
 	BGGAPIToken    string
@@ -35,14 +37,14 @@ func Load() (Config, error) {
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("DATABASE_URL is required")
 	}
-	c.MigrationURL = migrationURL(c.DatabaseURL)
-	if c.MigrationURL == "" {
-		c.MigrationURL = c.DatabaseURL
+	c.DirectURL = directURL(c.DatabaseURL)
+	if c.DirectURL == "" {
+		c.DirectURL = c.DatabaseURL
 	}
 	return c, nil
 }
 
-// migrationURL derives a direct (non-pooled) connection from databaseURL.
+// directURL derives a non-pooled connection from databaseURL.
 //
 // Neon's DATABASE_URL points at its PgBouncer pooler in transaction mode, where
 // a connection returns to the pool between statements. The migrator holds a
@@ -59,7 +61,7 @@ func Load() (Config, error) {
 //
 // MIGRATION_DATABASE_URL overrides this for setups that publish an unrelated
 // direct endpoint.
-func migrationURL(databaseURL string) string {
+func directURL(databaseURL string) string {
 	if v := os.Getenv("MIGRATION_DATABASE_URL"); v != "" {
 		return v
 	}

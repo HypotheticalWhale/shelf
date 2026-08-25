@@ -24,7 +24,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	pool, err := db.NewForMigrations(ctx, cfg.MigrationURL)
+	pool, err := db.NewForMigrations(ctx, cfg.DirectURL)
 	if err != nil {
 		log.Fatalf("connect: %v", err)
 	}

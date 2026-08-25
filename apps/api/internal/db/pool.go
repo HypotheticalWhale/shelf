@@ -38,6 +38,17 @@ func NewForMigrations(ctx context.Context, databaseURL string) (*pgxpool.Pool, e
 	return newPool(ctx, databaseURL, pgx.QueryExecModeSimpleProtocol, 1)
 }
 
+// NewForListen builds a small non-pooled pool for LISTEN/NOTIFY.
+//
+// A transaction pooler hands the connection back after every statement, so the
+// LISTEN registration is dropped and notifications never arrive — with no error
+// to show for it. This must therefore use the direct endpoint. It is kept small
+// because each open event stream holds one connection and the direct endpoint
+// allows far fewer than the pooler.
+func NewForListen(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	return newPool(ctx, databaseURL, pgx.QueryExecModeSimpleProtocol, 6)
+}
+
 func newPool(ctx context.Context, databaseURL string, mode pgx.QueryExecMode, maxConns int32) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {

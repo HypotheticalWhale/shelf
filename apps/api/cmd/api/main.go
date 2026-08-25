@@ -46,7 +46,7 @@ func main() {
 	// Opt-in so a deploy can migrate itself. The migrator takes an advisory
 	// lock, so several instances booting at once is safe.
 	if os.Getenv("MIGRATE_ON_BOOT") == "1" {
-		mpool, err := db.NewForMigrations(connectCtx, cfg.MigrationURL)
+		mpool, err := db.NewForMigrations(connectCtx, cfg.DirectURL)
 		if err != nil {
 			log.Fatalf("migrate: %v", err)
 		}

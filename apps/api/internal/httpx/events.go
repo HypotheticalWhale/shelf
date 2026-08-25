@@ -55,8 +55,15 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Minute)
 	defer cancel()
 
-	conn, err := s.store.Pool().Acquire(ctx)
+	pool, err := s.listenPool(ctx)
 	if err != nil {
+		log.Printf("events: direct pool: %v", err)
+		return
+	}
+
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		// Every direct connection is busy; the client will retry shortly.
 		log.Printf("events: acquire: %v", err)
 		return
 	}

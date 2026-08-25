@@ -2,13 +2,17 @@
 package httpx
 
 import (
+	"context"
 	"net/http"
+	"sync"
 
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/auth"
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/config"
+	"github.com/HypotheticalWhale/shelf/apps/api/internal/db"
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/importer"
 	"github.com/HypotheticalWhale/shelf/apps/api/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
@@ -16,6 +20,25 @@ type Server struct {
 	auth  *auth.Authenticator
 	imp   *importer.Importer
 	cfg   config.Config
+
+	// listen is a small, non-pooled pool used only for LISTEN. A transaction
+	// pooler returns the connection between statements, which silently drops
+	// the subscription — the stream stays open and simply never delivers.
+	listenOnce sync.Once
+	listen     *pgxpool.Pool
+	listenErr  error
+}
+
+// listenPool opens the direct connection pool on first use, so a deployment
+// without any live listeners never pays for it.
+//
+// It is deliberately tiny: each open stream holds one connection, and the
+// direct endpoint has a far smaller ceiling than the pooler.
+func (s *Server) listenPool(ctx context.Context) (*pgxpool.Pool, error) {
+	s.listenOnce.Do(func() {
+		s.listen, s.listenErr = db.NewForListen(ctx, s.cfg.DirectURL)
+	})
+	return s.listen, s.listenErr
 }
 
 func NewServer(cfg config.Config, st *store.Store) *Server {
