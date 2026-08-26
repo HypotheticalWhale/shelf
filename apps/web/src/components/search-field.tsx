@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { apiRequest } from "@/lib/client";
+import { GameCover } from "./game-cover";
 import { cn, formatYear, playerRange } from "@/lib/format";
 import type { Game, GamePage } from "@/lib/types";
 
@@ -193,12 +194,15 @@ export function SearchField() {
                 i === active ? "bg-felt-700" : "hover:bg-felt-800",
               )}
             >
-              <span className="size-9 shrink-0 overflow-hidden rounded bg-felt-700">
-                {game.thumbnailUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={game.thumbnailUrl} alt="" className="size-full object-cover" />
-                )}
-              </span>
+              {/* The same typographic tile the cards use, so a result looks
+                  like the game it will open. */}
+              <GameCover
+                name={game.name}
+                slug={game.slug}
+                src={game.thumbnailUrl}
+                className="size-9 shrink-0 rounded"
+                compact
+              />
 
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">{game.name}</span>
