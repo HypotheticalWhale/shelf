@@ -36,7 +36,7 @@ export function ScoreBadge({ score, numRatings, size = "sm" }: Props) {
         <span
           className={
             large
-              ? "font-mono font-bold text-5xl leading-none text-chalk-faint/50"
+              ? "font-mono font-bold text-3xl leading-none text-chalk-faint/40"
               : "font-mono font-bold text-lg leading-none text-chalk-faint/50"
           }
           aria-hidden

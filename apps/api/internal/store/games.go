@@ -221,6 +221,7 @@ func getGameBySlug(ctx context.Context, q querier, slug, viewerID string) (Game,
 		       g.min_players, g.max_players, g.min_playtime, g.max_playtime, g.weight,
 		       g.designers, g.categories, g.mechanics,
 		       g.image_credit, g.image_source,
+		       COALESCE(shelf.owned, 0), COALESCE(shelf.played, 0), COALESCE(shelf.want, 0),
 		       COALESCE(gs.num_ratings, 0), COALESCE(gs.rating_sum, 0),
 		       r.value,
 		       gl.mean_rating, gl.prior_weight,
@@ -234,6 +235,12 @@ func getGameBySlug(ctx context.Context, q querier, slug, viewerID string) (Game,
 		  LEFT JOIN game_stats gs ON gs.game_id = g.id
 		  CROSS JOIN global_stats gl
 		  LEFT JOIN ratings r ON r.game_id = g.id AND r.user_id = $2
+		  LEFT JOIN LATERAL (
+		        SELECT count(*) FILTER (WHERE status = 'owned')    AS owned,
+		               count(*) FILTER (WHERE status = 'played')   AS played,
+		               count(*) FILTER (WHERE status = 'wishlist') AS want
+		          FROM shelf_items si WHERE si.game_id = g.id
+		  ) shelf ON true
 		 WHERE g.slug = $1`
 
 	var g Game
@@ -244,6 +251,7 @@ func getGameBySlug(ctx context.Context, q querier, slug, viewerID string) (Game,
 		&g.MinPlayers, &g.MaxPlayers, &g.MinPlaytime, &g.MaxPlaytime, &g.Weight,
 		&g.Designers, &g.Categories, &g.Mechanics,
 		&g.ImageCredit, &g.ImageSource,
+		&g.Owners, &g.Players, &g.Wanters,
 		&g.NumRatings, &g.RatingSum,
 		&g.ViewerRating,
 		&prior.MeanRating, &prior.PriorWeight,

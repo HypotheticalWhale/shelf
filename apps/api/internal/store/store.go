@@ -68,6 +68,12 @@ type Game struct {
 	ImageCredit *string `json:"imageCredit,omitempty"`
 	ImageSource *string `json:"imageSource,omitempty"`
 
+	// Owners, Players and Wanters count how many people hold this game on each
+	// of their shelves.
+	Owners  int `json:"owners"`
+	Players int `json:"players"`
+	Wanters int `json:"wanters"`
+
 	// ViewerRating is the requesting user's own rating, when signed in.
 	ViewerRating *float64 `json:"viewerRating"`
 	// ViewerShelf lists the requesting user's shelf statuses for this game.

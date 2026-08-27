@@ -6,6 +6,7 @@ import { useLiveScore } from "./live-scores";
 import { RatingPips } from "./rating-pips";
 import { ScoreBadge } from "./score-badge";
 import { ShelfControls } from "./shelf-controls";
+import { CollectionStats } from "./collection-stats";
 import { scoreColor } from "@/lib/format";
 import type { GameDetail, Game } from "@/lib/types";
 
@@ -41,7 +42,7 @@ export function GamePanel({ game: initial }: { game: GameDetail }) {
 
   return (
     <div className="mt-6 rounded-xl border border-rule bg-felt-900/70 p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-6">
+      <div className="grid gap-6 sm:grid-cols-[minmax(0,14rem)_minmax(0,auto)] sm:gap-10">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-chalk-faint">
             Shelf score
@@ -71,7 +72,7 @@ export function GamePanel({ game: initial }: { game: GameDetail }) {
       </div>
 
       {game.numRatings > 0 && (
-        <div className="mt-7">
+        <div className="mt-7 max-w-sm">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-chalk-faint">
             Spread
           </p>
@@ -95,15 +96,28 @@ export function GamePanel({ game: initial }: { game: GameDetail }) {
         </div>
       )}
 
-      <div className="mt-7 pt-5 border-t border-rule-soft">
+      <div className="mt-7 border-t border-rule-soft pt-5">
         <ShelfControls slug={game.slug} initial={game.viewerShelf ?? []} />
       </div>
 
-      <p className="mt-5 text-xs text-chalk-faint leading-relaxed max-w-lg">
-        The shelf score is a Bayesian average: every game starts weighted toward
-        the site-wide mean and earns its way out as real ratings arrive. It is
-        why a single perfect score will not put an unknown game at number one.
-      </p>
+      <CollectionStats
+        className="mt-5"
+        owners={game.owners ?? 0}
+        players={game.players ?? 0}
+        wanters={game.wanters ?? 0}
+        viewerShelf={game.viewerShelf ?? []}
+      />
+
+      <details className="mt-5 max-w-lg">
+        <summary className="cursor-pointer list-none font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-faint transition-colors hover:text-chalk-dim [&::-webkit-details-marker]:hidden">
+          How the shelf score works
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-chalk-faint">
+          A Bayesian average: every game starts weighted toward the site-wide
+          mean and earns its way out as real ratings arrive. It is why a single
+          perfect score will not put an unknown game at number one.
+        </p>
+      </details>
     </div>
   );
 }

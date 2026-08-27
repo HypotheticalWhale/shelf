@@ -29,7 +29,6 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
       game.weight ? `${game.weight.toFixed(1)} · ${weightLabel(game.weight)}` : null,
     ],
     ["Published", formatYear(game.yearPublished)],
-    ["Designer", game.designers?.slice(0, 2).join(", ") || null],
   ].filter(([, value]) => Boolean(value)) as [string, string][];
 
   return (
@@ -52,13 +51,13 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
             </p>
           )}
 
-          <dl className="mt-5 divide-y divide-rule-soft border-y border-rule-soft">
+          <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border border-rule-soft bg-felt-900/40 p-4">
             {facts.map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-4 py-2.5">
-                <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-chalk-faint">
+              <div key={label}>
+                <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-chalk-faint">
                   {label}
                 </dt>
-                <dd className="text-sm text-right">{value}</dd>
+                <dd className="mt-0.5 text-sm">{value}</dd>
               </div>
             ))}
           </dl>
@@ -68,9 +67,25 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
         </div>
 
         <div className="min-w-0">
-          <h1 className="font-display font-800 text-[clamp(2rem,5vw,3.25rem)] leading-[0.95] tracking-[-0.035em]">
-            {game.name}
-          </h1>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h1 className="font-display text-[clamp(2rem,5vw,3.25rem)] font-800 leading-[0.95] tracking-[-0.035em]">
+              {game.name}
+            </h1>
+            {game.yearPublished && (
+              <span className="font-mono text-sm text-chalk-faint">
+                {formatYear(game.yearPublished)}
+              </span>
+            )}
+          </div>
+
+          {game.designers && game.designers.length > 0 && (
+            <p className="mt-2.5 text-sm text-chalk-dim">
+              by{" "}
+              <span className="text-chalk">
+                {game.designers.slice(0, 3).join(", ")}
+              </span>
+            </p>
+          )}
 
           <GamePanel game={game} />
 
