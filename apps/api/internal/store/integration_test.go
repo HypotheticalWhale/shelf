@@ -655,3 +655,76 @@ func TestMultiSelectFilters(t *testing.T) {
 		t.Fatalf("adding a player filter widened the result: %d > %d", combo.Total, deck.Total)
 	}
 }
+
+// TestShelfCountsOnGameDetail covers the figures the game page shows under
+// "on other shelves". They are counted per shelf, not per person, so one
+// person who owns a game and has also played it must show up in both columns
+// — and a game nobody has kept must report three honest zeroes rather than
+// inheriting a neighbour's totals.
+func TestShelfCountsOnGameDetail(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+	reset(t, ctx)
+	seedCatalogue(t, ctx, st)
+
+	for _, u := range []string{"shelf_a", "shelf_b", "shelf_c"} {
+		if _, err := st.EnsureUser(ctx, u, u, u, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// a owns and has played it; b has only played it; c wants it.
+	for _, e := range []struct{ user, status string }{
+		{"shelf_a", "owned"},
+		{"shelf_a", "played"},
+		{"shelf_b", "played"},
+		{"shelf_c", "wishlist"},
+	} {
+		if err := st.SetShelfStatus(ctx, e.user, "root", e.status); err != nil {
+			t.Fatalf("%s/%s: %v", e.user, e.status, err)
+		}
+	}
+
+	got, err := st.GetGameBySlug(ctx, "root", "shelf_a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Owners != 1 || got.Players != 2 || got.Wanters != 1 {
+		t.Errorf("root: owners=%d players=%d wanters=%d, want 1/2/1",
+			got.Owners, got.Players, got.Wanters)
+	}
+
+	// Setting the same status twice is idempotent — the button is a toggle,
+	// not a counter.
+	if err := st.SetShelfStatus(ctx, "shelf_a", "root", "owned"); err != nil {
+		t.Fatal(err)
+	}
+	if got, err = st.GetGameBySlug(ctx, "root", ""); err != nil {
+		t.Fatal(err)
+	}
+	if got.Owners != 1 {
+		t.Errorf("re-owning counted twice: owners=%d, want 1", got.Owners)
+	}
+
+	// Taking it off one shelf must not disturb the others.
+	if err := st.RemoveShelfStatus(ctx, "shelf_a", "root", "owned"); err != nil {
+		t.Fatal(err)
+	}
+	if got, err = st.GetGameBySlug(ctx, "root", ""); err != nil {
+		t.Fatal(err)
+	}
+	if got.Owners != 0 || got.Players != 2 || got.Wanters != 1 {
+		t.Errorf("after removal: owners=%d players=%d wanters=%d, want 0/2/1",
+			got.Owners, got.Players, got.Wanters)
+	}
+
+	// An untouched game reports zeroes, which is what drives the empty state.
+	other, err := st.GetGameBySlug(ctx, "azul", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if other.Owners != 0 || other.Players != 0 || other.Wanters != 0 {
+		t.Errorf("azul: owners=%d players=%d wanters=%d, want 0/0/0",
+			other.Owners, other.Players, other.Wanters)
+	}
+}
