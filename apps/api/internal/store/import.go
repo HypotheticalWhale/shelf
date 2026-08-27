@@ -469,3 +469,99 @@ func (s *Store) TopMechanics(ctx context.Context, limit int) ([]string, error) {
 	}
 	return out, rows.Err()
 }
+
+// ArtworkTarget is a game the artwork pipeline may fill in.
+type ArtworkTarget struct {
+	ID    int64
+	BGGID int
+	Slug  string
+	Name  string
+	Year  *int
+}
+
+// GamesNeedingArtwork returns games with no cover yet, most prominent first.
+//
+// Ordered by chart position so a partial run covers the games people are most
+// likely to look at, and skipping anything already checked makes the pipeline
+// resumable across runs.
+func (s *Store) GamesNeedingArtwork(ctx context.Context, limit int, recheck bool) ([]ArtworkTarget, error) {
+	if limit <= 0 || limit > 20000 {
+		limit = 500
+	}
+
+	where := "g.image_url IS NULL"
+	if !recheck {
+		where += " AND g.image_checked_at IS NULL"
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT g.id, g.bgg_id, g.slug, g.name, g.year_published
+		  FROM games g
+		 WHERE `+where+`
+		 ORDER BY g.bgg_rank ASC NULLS LAST, g.bgg_id ASC
+		 LIMIT $1`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("games needing artwork: %w", err)
+	}
+	defer rows.Close()
+
+	var out []ArtworkTarget
+	for rows.Next() {
+		var t ArtworkTarget
+		if err := rows.Scan(&t.ID, &t.BGGID, &t.Slug, &t.Name, &t.Year); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// SetArtwork records a re-hosted cover and where it came from.
+func (s *Store) SetArtwork(ctx context.Context, id int64, url, source, license, credit, origin string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE games
+		   SET image_url        = $2,
+		       image_source     = $3,
+		       image_license    = $4,
+		       image_credit     = $5,
+		       image_origin     = $6,
+		       image_checked_at = now()
+		 WHERE id = $1`, id, url, source, license, credit, origin)
+	if err != nil {
+		return fmt.Errorf("set artwork: %w", err)
+	}
+	return nil
+}
+
+// MarkArtworkChecked notes that a game was looked at and nothing was found, so
+// the next run moves past it instead of retrying the same dead ends.
+func (s *Store) MarkArtworkChecked(ctx context.Context, id int64) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE games SET image_checked_at = now() WHERE id = $1`, id)
+	return err
+}
+
+// ArtworkCoverage summarises what the pipeline has managed so far.
+func (s *Store) ArtworkCoverage(ctx context.Context) (map[string]int, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT COALESCE(image_source, CASE WHEN image_checked_at IS NULL
+		                                   THEN 'not looked at'
+		                                   ELSE 'nothing found' END) AS src,
+		       count(*)
+		  FROM games GROUP BY src ORDER BY count(*) DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := map[string]int{}
+	for rows.Next() {
+		var k string
+		var n int
+		if err := rows.Scan(&k, &n); err != nil {
+			return nil, err
+		}
+		out[k] = n
+	}
+	return out, rows.Err()
+}

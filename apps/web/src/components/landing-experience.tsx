@@ -298,7 +298,7 @@ function LandingGameCard({
           <GameCover
             name={game.name}
             slug={game.slug}
-            src={game.thumbnailUrl}
+            src={game.imageUrl ?? game.thumbnailUrl}
             className="absolute inset-0 size-full"
             full
           />

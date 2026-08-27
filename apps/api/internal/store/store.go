@@ -63,6 +63,11 @@ type Game struct {
 	Score      float64 `json:"score"`
 	Mean       float64 `json:"mean"`
 
+	// ImageCredit and ImageSource say where a re-hosted cover came from. We
+	// serve the file ourselves, so the credit has to travel with it.
+	ImageCredit *string `json:"imageCredit,omitempty"`
+	ImageSource *string `json:"imageSource,omitempty"`
+
 	// ViewerRating is the requesting user's own rating, when signed in.
 	ViewerRating *float64 `json:"viewerRating"`
 	// ViewerShelf lists the requesting user's shelf statuses for this game.

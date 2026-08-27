@@ -199,7 +199,7 @@ export function SearchField() {
               <GameCover
                 name={game.name}
                 slug={game.slug}
-                src={game.thumbnailUrl}
+                src={game.imageUrl ?? game.thumbnailUrl}
                 className="size-9 shrink-0 rounded"
                 compact
               />

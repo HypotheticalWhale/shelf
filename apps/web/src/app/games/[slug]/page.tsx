@@ -46,6 +46,12 @@ export default async function GamePage({ params }: PageProps<"/games/[slug]">) {
             full
           />
 
+          {game.imageCredit && (
+            <p className="mt-2 font-mono text-[10px] text-chalk-faint">
+              Cover: {game.imageCredit}
+            </p>
+          )}
+
           <dl className="mt-5 divide-y divide-rule-soft border-y border-rule-soft">
             {facts.map(([label, value]) => (
               <div key={label} className="flex justify-between gap-4 py-2.5">

@@ -30,6 +30,8 @@ export type Game = {
   numRatings: number;
   score: number;
   mean: number;
+  imageCredit?: string | null;
+  imageSource?: string | null;
   viewerRating: number | null;
   viewerShelf?: string[];
 };

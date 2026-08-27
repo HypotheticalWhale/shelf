@@ -149,6 +149,16 @@ export function ShelfRow({
                           background: `linear-gradient(180deg, ${color}, ${color}BB)`,
                         }}
                       >
+                        {game.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={game.imageUrl}
+                            alt=""
+                            aria-hidden
+                            className="absolute inset-0 size-full scale-125 object-cover opacity-45 blur-[6px]"
+                          />
+                        )}
+
                         <span
                           className="absolute inset-x-0 top-1.5 flex items-center justify-center whitespace-nowrap px-1 font-display font-700 tracking-tight text-felt-950/85"
                           style={{

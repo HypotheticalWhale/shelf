@@ -39,7 +39,7 @@ export function GameCard({ game: initial, index = 0 }: { game: Game; index?: num
         <GameCover
           name={game.name}
           slug={game.slug}
-          src={game.thumbnailUrl}
+          src={game.imageUrl ?? game.thumbnailUrl}
           className="aspect-[4/3] w-full"
         />
       </Link>
