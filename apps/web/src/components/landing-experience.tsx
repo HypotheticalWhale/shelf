@@ -59,8 +59,14 @@ export function LandingExperience({ games }: { games: Game[] }) {
   }, []);
 
   const { scrollYProgress } = useScroll({
+    // "end end", not "end start": the stage is pinned only until the container's
+    // bottom meets the viewport's bottom, which is one viewport short of the
+    // container's full height. Measuring progress to "end start" stretched the
+    // animation over a third more scroll than the pin actually lasts, so the
+    // catalogue reached full opacity at the very moment the stage unpinned and
+    // then slid off the top before it could be read.
     target: container,
-    offset: ["start start", "end start"],
+    offset: ["start start", "end end"],
   });
 
   // Tracks the wheel closely rather than trailing it. The original spring was
@@ -72,9 +78,17 @@ export function LandingExperience({ games }: { games: Game[] }) {
     restDelta: 0.0005,
   });
 
-  const tableScale = useTransform(smoothProgress, [0, 0.35, 0.65], [1, 1.15, 4.5]);
+  const tableScale = useTransform(
+    smoothProgress,
+    [0, 0.35, 0.65],
+    [1, 1.15, 4.5],
+  );
   const tableY = useTransform(smoothProgress, [0, 0.35, 0.65], [0, -40, 180]);
-  const tableRotateX = useTransform(smoothProgress, [0, 0.35, 0.65], [8, 12, 72]);
+  const tableRotateX = useTransform(
+    smoothProgress,
+    [0, 0.35, 0.65],
+    [8, 12, 72],
+  );
   const tableOpacity = useTransform(smoothProgress, [0, 0.48, 0.64], [1, 1, 0]);
   const heroOpacity = useTransform(smoothProgress, [0, 0.25, 0.45], [1, 1, 0]);
   const catalogueY = useTransform(smoothProgress, [0.4, 0.7, 1], [250, 0, 0]);
@@ -83,8 +97,12 @@ export function LandingExperience({ games }: { games: Game[] }) {
   // A layer faded to zero is still in the document: without this the catalogue
   // cards sat invisibly over the hero and swallowed clicks meant for the page
   // behind them, and the hero kept taking clicks once it had faded out.
-  const cataloguePointer = useTransform(catalogueOpacity, (o) => (o > 0.5 ? "auto" : "none"));
-  const heroPointer = useTransform(heroOpacity, (o) => (o > 0.5 ? "auto" : "none"));
+  const cataloguePointer = useTransform(catalogueOpacity, (o) =>
+    o > 0.5 ? "auto" : "none",
+  );
+  const heroPointer = useTransform(heroOpacity, (o) =>
+    o > 0.5 ? "auto" : "none",
+  );
 
   // One row only: the panel is pinned to the viewport, so a second row is
   // clipped by its lower edge rather than scrolling into view.
@@ -92,7 +110,7 @@ export function LandingExperience({ games }: { games: Game[] }) {
 
   return (
     <div ref={container} className="relative h-[300vh] bg-[#15110d]">
-      <div className="sticky top-0 h-screen overflow-hidden">
+      <div className="sticky top-16 h-[calc(100vh-4rem)] overflow-hidden">
         {/* Atmosphere */}
         <div className="absolute inset-0">
           <div className="absolute left-1/2 top-[35%] h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-amber-500/[0.08] blur-[160px]" />
@@ -183,9 +201,33 @@ export function LandingExperience({ games }: { games: Game[] }) {
                   })}
                 </div>
 
-                <TableCard title="ROOT" x="-260px" y="-80px" rotate={-14} color="#b9d68b" delay={0} reduced={reduced} />
-                <TableCard title="DUNE" x="280px" y="-70px" rotate={13} color="#d6ad77" delay={0.1} reduced={reduced} />
-                <TableCard title="WINGSPAN" x="300px" y="80px" rotate={-8} color="#a8c5d0" delay={0.2} reduced={reduced} />
+                <TableCard
+                  title="ROOT"
+                  x="-260px"
+                  y="-80px"
+                  rotate={-14}
+                  color="#b9d68b"
+                  delay={0}
+                  reduced={reduced}
+                />
+                <TableCard
+                  title="DUNE"
+                  x="280px"
+                  y="-70px"
+                  rotate={13}
+                  color="#d6ad77"
+                  delay={0.1}
+                  reduced={reduced}
+                />
+                <TableCard
+                  title="WINGSPAN"
+                  x="300px"
+                  y="80px"
+                  rotate={-8}
+                  color="#a8c5d0"
+                  delay={0.2}
+                  reduced={reduced}
+                />
 
                 <Dice x="220px" y="-85px" reduced={reduced} />
                 <Dice x="-220px" y="95px" red reduced={reduced} />
@@ -224,40 +266,47 @@ export function LandingExperience({ games }: { games: Game[] }) {
             pointerEvents: reduced ? "auto" : cataloguePointer,
             willChange: "transform, opacity",
           }}
-          className="shell absolute inset-x-0 top-[5%] z-20 sm:top-[6%]"
+          className="absolute inset-0 z-20 flex items-center"
         >
-          <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
-            <div>
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
-                Explore
-              </p>
-              <h2 className="font-display text-3xl font-black tracking-tight text-white sm:text-6xl">
-                What&rsquo;s on the table?
-              </h2>
+          <div className="shell w-full">
+            <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
+              <div>
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+                  Explore
+                </p>
+                <h2 className="font-display text-3xl font-black tracking-tight text-white sm:text-6xl">
+                  What&rsquo;s on the table?
+                </h2>
+              </div>
+
+              <Link
+                href="/games"
+                className="hidden shrink-0 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm text-white/60 transition hover:bg-white/10 md:block"
+              >
+                Browse all 31,000 →
+              </Link>
             </div>
 
             <Link
               href="/games"
-              className="hidden shrink-0 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm text-white/60 transition hover:bg-white/10 md:block"
+              className="mb-5 flex items-center rounded-2xl sm:mb-8 border border-white/10 bg-[#221b14] px-5 py-4 transition hover:bg-[#2b231a]"
             >
-              Browse all 31,000 →
+              <span className="mr-3 text-white/30">⌕</span>
+              <span className="text-sm text-white/30">
+                Search games, designers, mechanics…
+              </span>
             </Link>
-          </div>
 
-          <Link
-            href="/games"
-            className="mb-5 flex items-center rounded-2xl sm:mb-8 border border-white/10 bg-[#221b14] px-5 py-4 transition hover:bg-[#2b231a]"
-          >
-            <span className="mr-3 text-white/30">⌕</span>
-            <span className="text-sm text-white/30">
-              Search games, designers, mechanics…
-            </span>
-          </Link>
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-            {shown.map((game, i) => (
-              <LandingGameCard key={game.slug} game={game} index={i} reduced={reduced} />
-            ))}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 [&>*:nth-child(n+3)]:hidden md:[&>*:nth-child(n+3)]:block">
+              {shown.map((game, i) => (
+                <LandingGameCard
+                  key={game.slug}
+                  game={game}
+                  index={i}
+                  reduced={reduced}
+                />
+              ))}
+            </div>
           </div>
         </motion.section>
       </div>
@@ -294,7 +343,7 @@ function LandingGameCard({
       className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:-translate-y-2 hover:bg-white/[0.07]"
     >
       <Link href={`/games/${game.slug}`} className="block">
-        <div className="relative aspect-[4/5] overflow-hidden">
+        <div className="relative h-[clamp(170px,30vh,300px)] w-full overflow-hidden">
           <GameCover
             name={game.name}
             slug={game.slug}
@@ -323,11 +372,15 @@ function LandingGameCard({
         <p className="mt-2 font-mono text-sm">
           {shown.numRatings > 0 ? (
             <>
-              <span style={{ color: scoreColor(shown.score) }} className="font-bold">
+              <span
+                style={{ color: scoreColor(shown.score) }}
+                className="font-bold"
+              >
                 {shown.score.toFixed(1)}
               </span>
               <span className="ml-1.5 text-[11px] text-white/30">
-                {shown.numRatings} {shown.numRatings === 1 ? "rating" : "ratings"}
+                {shown.numRatings}{" "}
+                {shown.numRatings === 1 ? "rating" : "ratings"}
               </span>
             </>
           ) : (
@@ -347,24 +400,49 @@ function LandingGameCard({
 }
 
 function TableCard({
-  title, x, y, rotate, color, delay, reduced,
+  title,
+  x,
+  y,
+  rotate,
+  color,
+  delay,
+  reduced,
 }: {
-  title: string; x: string; y: string; rotate: number;
-  color: string; delay: number; reduced: boolean | null;
+  title: string;
+  x: string;
+  y: string;
+  rotate: number;
+  color: string;
+  delay: number;
+  reduced: boolean | null;
 }) {
   return (
     <motion.div
-      initial={reduced ? false : {
-        opacity: 0, scale: 0.5,
-        x: "calc(-50% + 0px)", y: "calc(-50% + 0px)",
-        rotate: rotate * 2,
-      }}
+      initial={
+        reduced
+          ? false
+          : {
+              opacity: 0,
+              scale: 0.5,
+              x: "calc(-50% + 0px)",
+              y: "calc(-50% + 0px)",
+              rotate: rotate * 2,
+            }
+      }
       animate={{
-        opacity: 1, scale: 1,
-        x: `calc(-50% + ${x})`, y: `calc(-50% + ${y})`,
+        opacity: 1,
+        scale: 1,
+        x: `calc(-50% + ${x})`,
+        y: `calc(-50% + ${y})`,
         rotate,
       }}
-      transition={{ delay, duration: 0.9, type: "spring", stiffness: 90, damping: 13 }}
+      transition={{
+        delay,
+        duration: 0.9,
+        type: "spring",
+        stiffness: 90,
+        damping: 13,
+      }}
       className="absolute left-1/2 top-1/2 h-[125px] w-[85px] rounded-xl p-1.5 shadow-[0_15px_20px_rgba(0,0,0,.4)]"
       style={{ backgroundColor: color }}
     >
@@ -378,35 +456,65 @@ function TableCard({
   );
 }
 
-function Dice({ x, y, red = false, reduced }: {
-  x: string; y: string; red?: boolean; reduced: boolean | null;
+function Dice({
+  x,
+  y,
+  red = false,
+  reduced,
+}: {
+  x: string;
+  y: string;
+  red?: boolean;
+  reduced: boolean | null;
 }) {
   return (
     <motion.div
-      initial={reduced ? false : {
-        opacity: 0,
-        x: "calc(-50% + 400px)", y: "calc(-50% - 250px)",
-        rotate: 220,
-      }}
+      initial={
+        reduced
+          ? false
+          : {
+              opacity: 0,
+              x: "calc(-50% + 400px)",
+              y: "calc(-50% - 250px)",
+              rotate: 220,
+            }
+      }
       animate={{
         opacity: 1,
-        x: `calc(-50% + ${x})`, y: `calc(-50% + ${y})`,
+        x: `calc(-50% + ${x})`,
+        y: `calc(-50% + ${y})`,
         rotate: red ? -22 : 32,
       }}
-      transition={{ delay: 0.9, duration: 1, type: "spring", stiffness: 75, damping: 11 }}
+      transition={{
+        delay: 0.9,
+        duration: 1,
+        type: "spring",
+        stiffness: 75,
+        damping: 11,
+      }}
       className={`absolute left-1/2 top-1/2 grid h-12 w-12 place-items-center rounded-xl shadow-[0_10px_15px_rgba(0,0,0,.4)] ${
         red ? "bg-red-400" : "bg-white"
       }`}
     >
-      <span className={`text-lg font-black ${red ? "text-red-950" : "text-black/70"}`}>
+      <span
+        className={`text-lg font-black ${red ? "text-red-950" : "text-black/70"}`}
+      >
         {red ? "6" : "5"}
       </span>
     </motion.div>
   );
 }
 
-function Meeple({ x, y, color, reduced }: {
-  x: string; y: string; color: string; reduced: boolean | null;
+function Meeple({
+  x,
+  y,
+  color,
+  reduced,
+}: {
+  x: string;
+  y: string;
+  color: string;
+  reduced: boolean | null;
 }) {
   return (
     <motion.div
