@@ -143,3 +143,23 @@ body::before {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+  While a filter change is in flight, the results below it still belong to the
+  previous query. Fading them says so, and because the filters sit immediately
+  before the grid it costs no extra state — the chips already know they are
+  waiting. Results stay readable and in place; nothing moves.
+*/
+[data-browse-filters][aria-busy="true"] ~ .grid {
+  opacity: 0.45;
+}
+
+[data-browse-filters] ~ .grid {
+  transition: opacity 140ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-browse-filters] ~ .grid {
+    transition: none;
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useOptimistic, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/format";
 
@@ -23,16 +24,38 @@ const SORTS = [
 export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
   const router = useRouter();
   const params = useSearchParams();
+  const [pending, startTransition] = useTransition();
+
+  // A chip used to stay unpressed until the server had answered, because its
+  // appearance came from the URL and the URL only changes once the navigation
+  // commits. That is a quarter of a second of a chip that looks broken on a
+  // fast connection, and much longer on a slow one. The click now paints
+  // immediately and the query catches up: React discards this value once the
+  // real search params arrive, and by then they agree, so nothing flickers.
+  const [optimistic, setOptimistic] = useOptimistic(
+    params.toString(),
+    (_current, next: string) => next,
+  );
+  const shown = new URLSearchParams(optimistic);
+
+  const navigate = (next: URLSearchParams) => {
+    startTransition(() => {
+      setOptimistic(next.toString());
+      // scroll: false — changing a filter should leave you where you are
+      // rather than throwing you back to the top of the page.
+      router.push(`/games?${next}`, { scroll: false });
+    });
+  };
 
   // Values within a facet accumulate — picking two mechanics means "either" —
   // and clicking a selected chip removes just that one.
   const selected = (key: string) => {
-    const raw = params.get(key);
+    const raw = shown.get(key);
     return raw ? raw.split(",").filter(Boolean) : [];
   };
 
   const toggle = (key: string, value: string) => {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(shown);
     const current = selected(key);
     const updated = current.includes(value)
       ? current.filter((v) => v !== value)
@@ -44,22 +67,22 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
       next.set(key, updated.join(","));
     }
     next.delete("page");
-    router.push(`/games?${next}`);
+    navigate(next);
   };
 
   // Sort stays single-select: a list has one order.
   const applySort = (value: string) => {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(shown);
     next.set("sort", value);
     next.delete("page");
-    router.push(`/games?${next}`);
+    navigate(next);
   };
 
   const clearAll = () => {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(shown);
     for (const key of ["players", "maxTime", "mechanic", "detailed"]) next.delete(key);
     next.delete("page");
-    router.push(`/games?${next}`);
+    navigate(next);
   };
 
   const activeCount =
@@ -74,15 +97,8 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
   ];
 
   return (
-    <div className="mt-6 flex flex-col gap-3">
-      <FilterRow
-        label="Players"
-        note={
-          selected("players").length > 1
-            ? `plays at ${[...selected("players")].sort((a, b) => Number(a) - Number(b)).join(" and ")}`
-            : undefined
-        }
-      >
+    <div className="mt-6 flex flex-col gap-3" data-browse-filters aria-busy={pending}>
+      <FilterRow label="Players">
         {PLAYERS.map((n) => (
           <Chip
             key={n}
@@ -124,7 +140,7 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
         {SORTS.map((s) => (
           <Chip
             key={s.value}
-            active={(params.get("sort") ?? "score") === s.value}
+            active={(shown.get("sort") ?? "score") === s.value}
             onClick={() => applySort(s.value)}
           >
             {s.label}
@@ -147,11 +163,9 @@ export function BrowseFilters({ mechanics }: { mechanics: string[] }) {
 
 function FilterRow({
   label,
-  note,
   children,
 }: {
   label: string;
-  note?: string;
   children: React.ReactNode;
 }) {
   return (

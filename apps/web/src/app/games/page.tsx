@@ -1,4 +1,5 @@
 import { apiGet } from "@/lib/api";
+import { describeQuery } from "@/lib/format";
 import { GameCard } from "@/components/game-card";
 import { BrowseFilters } from "@/components/browse-filters";
 import type { GamePage } from "@/lib/types";
@@ -37,13 +38,22 @@ export default async function BrowsePage({ searchParams }: PageProps<"/games">) 
     <div className="shell py-10">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
+          {/*
+            The heading stays put. It used to be replaced by whatever was being
+            filtered for, so the page renamed itself as you worked and the
+            count below it never explained what had been narrowed.
+          */}
           <h1 className="font-display font-800 text-4xl tracking-[-0.03em]">
-            {get("q")
-            ? `“${get("q")}”`
-            : (get("mechanic")?.split(",").join(" · ") ?? "Every game")}
+            Browse games
           </h1>
-          <p className="mt-1.5 font-mono text-xs text-chalk-faint">
-            {result.total} {result.total === 1 ? "game" : "games"}
+          <p className="mt-1.5 max-w-2xl text-sm text-chalk-dim">
+            {describeQuery({
+              total: result.total,
+              query: get("q"),
+              players: get("players"),
+              maxTime: get("maxTime"),
+              mechanics: get("mechanic"),
+            })}
           </p>
         </div>
       </header>
