@@ -35,6 +35,28 @@ func main() {
 	}
 	fmt.Printf("  total=%d  withCategories=%d  withPlayers=%d  withBoth=%d\n\n", total, cats, players, both)
 
+	// Artwork coverage, split by where the cover came from. The backfill from
+	// BoardGameGeek runs for hours, so this is the way to see how far it got.
+	var art, fromBGG, aggregated, weights int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FILTER (WHERE image_url IS NOT NULL),
+		       count(*) FILTER (WHERE image_url LIKE '%geekdo-images.com%'),
+		       count(*) FILTER (WHERE image_url IS NOT NULL
+		                          AND image_url NOT LIKE '%geekdo-images.com%'),
+		       count(*) FILTER (WHERE weight IS NOT NULL AND weight > 0)
+		  FROM games`).Scan(&art, &fromBGG, &aggregated, &weights); err != nil {
+		log.Fatal(err)
+	}
+	pct := func(n int) float64 {
+		if total == 0 {
+			return 0
+		}
+		return float64(n) * 100 / float64(total)
+	}
+	fmt.Printf("  artwork:  %d of %d (%.1f%%)  —  bgg=%d  aggregated=%d\n",
+		art, total, pct(art), fromBGG, aggregated)
+	fmt.Printf("  weights:  %d of %d (%.1f%%)\n\n", weights, total, pct(weights))
+
 	rows, err := pool.Query(ctx,
 		`SELECT c, count(*) n FROM (SELECT unnest(categories) c FROM games) t GROUP BY c ORDER BY n DESC LIMIT 20`)
 	if err != nil {
