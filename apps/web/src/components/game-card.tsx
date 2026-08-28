@@ -40,7 +40,7 @@ export function GameCard({ game: initial, index = 0 }: { game: Game; index?: num
           name={game.name}
           slug={game.slug}
           src={game.imageUrl ?? game.thumbnailUrl}
-          className="aspect-[4/3] w-full"
+          className="aspect-square w-full"
         />
       </Link>
 

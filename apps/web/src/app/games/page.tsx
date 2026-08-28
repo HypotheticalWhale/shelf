@@ -5,7 +5,10 @@ import type { GamePage } from "@/lib/types";
 
 export const metadata = { title: "Browse" };
 
-const PAGE_SIZE = 24;
+// The grid runs 2, 3, 4, 5 and 6 columns across its breakpoints, and 60 is the
+// lowest common multiple of those — so every page fills whole rows at every
+// width. At 24 the five-column layout ended a page one card short.
+const PAGE_SIZE = 60;
 
 export default async function BrowsePage({ searchParams }: PageProps<"/games">) {
   const params = await searchParams;

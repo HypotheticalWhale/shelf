@@ -64,8 +64,22 @@ func (s *Store) upsertGame(ctx context.Context, g GameInput) error {
 			name           = EXCLUDED.name,
 			year_published = EXCLUDED.year_published,
 			description    = EXCLUDED.description,
-			image_url      = EXCLUDED.image_url,
-			thumbnail_url  = EXCLUDED.thumbnail_url,
+			-- Never trade a cover we have for one we do not: a refresh that
+			-- returns no artwork must leave the aggregated image in place.
+			image_url      = COALESCE(EXCLUDED.image_url, games.image_url),
+			thumbnail_url  = COALESCE(EXCLUDED.thumbnail_url, games.thumbnail_url),
+			-- Provenance travels with the image. When a refresh does supply
+			-- artwork it supersedes whatever the aggregation pipeline found, so
+			-- the credit has to move with it — otherwise the page keeps
+			-- captioning a BoardGameGeek cover "Wikimedia Commons".
+			image_source   = CASE WHEN EXCLUDED.image_url IS NOT NULL
+			                      THEN 'boardgamegeek' ELSE games.image_source END,
+			image_credit   = CASE WHEN EXCLUDED.image_url IS NOT NULL
+			                      THEN 'BoardGameGeek' ELSE games.image_credit END,
+			image_license  = CASE WHEN EXCLUDED.image_url IS NOT NULL
+			                      THEN NULL ELSE games.image_license END,
+			image_origin   = CASE WHEN EXCLUDED.image_url IS NOT NULL
+			                      THEN EXCLUDED.image_url ELSE games.image_origin END,
 			min_players    = EXCLUDED.min_players,
 			max_players    = EXCLUDED.max_players,
 			min_playtime   = EXCLUDED.min_playtime,
@@ -106,7 +120,13 @@ func (s *Store) upsertGame(ctx context.Context, g GameInput) error {
 			g.BGGID, slug, g.Name, g.YearPublished, nullable(g.Description),
 			nullable(g.ImageURL), nullable(g.ThumbnailURL),
 			g.MinPlayers, g.MaxPlayers, g.MinPlaytime, g.MaxPlaytime, g.Weight,
-			g.Designers, g.Categories, g.Mechanics, source,
+			// NOT NULL DEFAULT '{}' columns: a nil Go slice sends NULL, not an
+			// empty array. Plenty of real games have no credited designer —
+			// Space Hulk (Fourth Edition) is one — and one of them aborted a
+			// full catalogue refresh 660 games in. The bulk path below already
+			// guards this; this path did not.
+			emptyIfNil(g.Designers), emptyIfNil(g.Categories), emptyIfNil(g.Mechanics),
+			source,
 		)
 		if err == nil {
 			return nil

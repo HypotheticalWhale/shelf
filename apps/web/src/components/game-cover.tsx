@@ -21,7 +21,7 @@ function isMicroThumb(src: string) {
 /**
  * A game's cover.
  *
- * Real artwork is rendered edge to edge. Everything else gets a typographic
+ * Real artwork is shown whole, never cropped. Everything else gets a typographic
  * tile: the title's initials over a player colour derived from the slug, so a
  * game is always the same colour and a grid of them reads like a shelf of
  * spines.
@@ -40,12 +40,27 @@ export function GameCover({ name, slug, src, className, priority, full, compact 
   if (usable) {
     return (
       <div className={cn("relative overflow-hidden bg-felt-800", className)}>
+        {/*
+          Box art is the game's identity, and it is not one shape: boxes come
+          square, portrait and landscape. Cropping to fill the frame sliced the
+          title off the artwork — Harmonies read as "MON" — so the art is
+          contained and a blurred copy of it fills the space around it. The
+          browser fetches the URL once and paints it twice.
+        */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={usable}
+          alt=""
+          aria-hidden
+          loading={priority ? "eager" : "lazy"}
+          className="absolute inset-0 size-full scale-110 object-cover blur-2xl opacity-45"
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={usable}
           alt=""
           loading={priority ? "eager" : "lazy"}
-          className="absolute inset-0 size-full object-cover"
+          className="absolute inset-0 size-full object-contain"
         />
       </div>
     );

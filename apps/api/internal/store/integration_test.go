@@ -728,3 +728,103 @@ func TestShelfCountsOnGameDetail(t *testing.T) {
 			other.Owners, other.Players, other.Wanters)
 	}
 }
+
+// TestUpsertGameWithNoDesigners guards a refresh against the games that carry
+// no credited designer, no category or no mechanic. The columns are NOT NULL
+// DEFAULT '{}', and a nil Go slice sends NULL rather than an empty array — one
+// such game (Space Hulk, Fourth Edition) aborted a full catalogue refresh 660
+// games in.
+func TestUpsertGameWithNoDesigners(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+	reset(t, ctx)
+
+	year := 2014
+	n, err := st.UpsertGames(ctx, []store.GameInput{{
+		BGGID:         165838,
+		Name:          "Space Hulk (Fourth Edition)",
+		YearPublished: &year,
+		Source:        "bgg",
+		// Designers, Categories and Mechanics deliberately left nil.
+	}})
+	if err != nil {
+		t.Fatalf("upserting a game with no designers failed: %v", err)
+	}
+	if n != 1 {
+		t.Fatalf("wrote %d games, want 1", n)
+	}
+
+	got, err := st.GetGameBySlug(ctx, "space-hulk-fourth-edition", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Designers) != 0 || len(got.Categories) != 0 || len(got.Mechanics) != 0 {
+		t.Errorf("expected empty tag arrays, got designers=%v categories=%v mechanics=%v",
+			got.Designers, got.Categories, got.Mechanics)
+	}
+
+	// And it must still be updatable, since a refresh upserts over it.
+	if _, err := st.UpsertGames(ctx, []store.GameInput{{
+		BGGID: 165838, Name: "Space Hulk (Fourth Edition)",
+		YearPublished: &year, Source: "bgg",
+		Designers: []string{"Richard Halliwell"},
+	}}); err != nil {
+		t.Fatalf("re-upserting failed: %v", err)
+	}
+}
+
+// TestRefreshKeepsArtworkProvenanceHonest covers the two ways a refresh can
+// lie about a cover: by crediting the wrong source, and by discarding art it
+// cannot replace.
+func TestRefreshKeepsArtworkProvenanceHonest(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+	reset(t, ctx)
+
+	const id = 999001
+	mk := func(img string) []store.GameInput {
+		return []store.GameInput{{
+			BGGID: id, Name: "Provenance Test", Source: "bgg", ImageURL: img,
+		}}
+	}
+
+	// The aggregation pipeline found a cover elsewhere and credited it.
+	if _, err := st.UpsertGames(ctx, mk("https://blob.example/cover.png")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := testPool.Exec(ctx,
+		`UPDATE games SET image_credit = 'Wikimedia Commons', image_source = 'commons'
+		  WHERE bgg_id = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+
+	// A refresh with no artwork must not throw away the cover we already have.
+	if _, err := st.UpsertGames(ctx, mk("")); err != nil {
+		t.Fatal(err)
+	}
+	got, err := st.GetGameBySlug(ctx, "provenance-test", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ImageURL == nil || *got.ImageURL != "https://blob.example/cover.png" {
+		t.Fatalf("an empty refresh discarded the existing cover: %v", got.ImageURL)
+	}
+	if got.ImageCredit == nil || *got.ImageCredit != "Wikimedia Commons" {
+		t.Errorf("credit changed without the image: %v", got.ImageCredit)
+	}
+
+	// A refresh that does supply artwork supersedes it — and the credit has to
+	// move with the image rather than staying behind on the old source.
+	if _, err := st.UpsertGames(ctx, mk("https://cf.geekdo-images.com/real.png")); err != nil {
+		t.Fatal(err)
+	}
+	if got, err = st.GetGameBySlug(ctx, "provenance-test", ""); err != nil {
+		t.Fatal(err)
+	}
+	if got.ImageURL == nil || *got.ImageURL != "https://cf.geekdo-images.com/real.png" {
+		t.Fatalf("refresh did not take the new cover: %v", got.ImageURL)
+	}
+	if got.ImageCredit == nil || *got.ImageCredit != "BoardGameGeek" {
+		t.Errorf("cover is BoardGameGeek's but credit says %v", got.ImageCredit)
+	}
+}
