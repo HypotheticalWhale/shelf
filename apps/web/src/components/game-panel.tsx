@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
 import { useLiveScore } from "./live-scores";
 import { RatingPips } from "./rating-pips";
 import { ScoreBadge } from "./score-badge";
 import { ShelfControls } from "./shelf-controls";
 import { CollectionStats } from "./collection-stats";
+import { useServerState } from "@/lib/use-server-state";
 import { scoreColor } from "@/lib/format";
 import type { GameDetail, Game } from "@/lib/types";
 
@@ -15,7 +15,7 @@ import type { GameDetail, Game } from "@/lib/types";
  * account of how the two relate.
  */
 export function GamePanel({ game: initial }: { game: GameDetail }) {
-  const [game, setGame] = useState<GameDetail>(initial);
+  const [game, setGame] = useServerState<GameDetail>(initial);
 
   // Live aggregates from other people's ratings.
   const live = useLiveScore(game.slug);

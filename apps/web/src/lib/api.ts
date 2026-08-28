@@ -22,7 +22,15 @@ export class ApiError extends Error {
 type FetchOptions = {
   /** Attach the caller's Clerk token so the API can personalise the response. */
   authenticated?: boolean;
-  /** Seconds to cache. Omit for always-fresh. */
+  /**
+   * Seconds to cache. Omit for always-fresh.
+   *
+   * This has to be opt-in. When the default was a silent 60 seconds, anything
+   * that reflects what people are doing right now went stale: a game added to
+   * your shelf was missing from your own shelf page, and your change was
+   * missing from everyone else's view of it, until the minute happened to
+   * elapse. Pages that genuinely want caching now say so.
+   */
   revalidate?: number;
 };
 
@@ -35,11 +43,14 @@ export async function apiGet<T>(path: string, options: FetchOptions = {}): Promi
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
+  // A personalised response must never be cached and served to someone else,
+  // and an unauthenticated read is only cached when the caller asks for it.
+  const cached = !options.authenticated && options.revalidate !== undefined;
+
   const res = await fetch(`${API_URL}${path}`, {
     headers,
-    // A personalised response must never be cached and served to someone else.
-    cache: options.authenticated ? "no-store" : undefined,
-    next: options.authenticated ? undefined : { revalidate: options.revalidate ?? 60 },
+    cache: cached ? undefined : "no-store",
+    next: cached ? { revalidate: options.revalidate } : undefined,
   });
 
   if (!res.ok) {

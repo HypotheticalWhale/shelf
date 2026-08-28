@@ -9,7 +9,9 @@ import type { GameDetail, Post } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/games/[slug]">) {
   const { slug } = await params;
-  const game = await apiGetOrNull<GameDetail>(`/games/${slug}`);
+  const game = await apiGetOrNull<GameDetail>(`/games/${slug}`, {
+    revalidate: 300,
+  });
   return { title: game?.name ?? "Game" };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import { apiRequest } from "@/lib/client";
 import { cn } from "@/lib/format";
@@ -14,6 +15,7 @@ const STATUSES = [
 /** Shelf membership: three toggles, saved the moment they are pressed. */
 export function ShelfControls({ slug, initial }: { slug: string; initial: string[] }) {
   const { isSignedIn, getToken } = useAuth();
+  const router = useRouter();
   const [active, setActive] = useState<string[]>(initial);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +32,12 @@ export function ShelfControls({ slug, initial }: { slug: string; initial: string
         body: on ? undefined : JSON.stringify({ status }),
         token,
       });
+
+      // The button knows immediately; the server-rendered parts of the page do
+      // not. Without this the "on other shelves" counts beside these very
+      // buttons still showed the old totals, and your own shelf and the people
+      // page kept serving what the router had already cached.
+      router.refresh();
     } catch (err) {
       setActive(previous);
       setError(err instanceof Error ? err.message : "Could not update your shelf");

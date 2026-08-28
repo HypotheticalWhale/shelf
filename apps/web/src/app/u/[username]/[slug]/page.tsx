@@ -8,7 +8,9 @@ import type { Post } from "@/lib/types";
 
 export async function generateMetadata({ params }: PageProps<"/u/[username]/[slug]">) {
   const { username, slug } = await params;
-  const post = await apiGetOrNull<Post>(`/users/${username}/posts/${slug}`);
+  const post = await apiGetOrNull<Post>(`/users/${username}/posts/${slug}`, {
+    revalidate: 300,
+  });
   return { title: post?.title ?? "Post" };
 }
 

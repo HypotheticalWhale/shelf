@@ -6,9 +6,10 @@ import type { Collector } from "@/lib/types";
 export const metadata = { title: "People" };
 
 export default async function PeoplePage() {
+  // Deliberately uncached: this page is how you see what everyone — including
+  // you — has just shelved, rated or written.
   const { collectors } = await apiGet<{ collectors: Collector[] }>(
     "/collectors?limit=48",
-    { revalidate: 60 },
   );
 
   const active = collectors.filter(

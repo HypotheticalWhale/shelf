@@ -11,6 +11,7 @@ import {
 } from "motion/react";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
+import { useServerState } from "@/lib/use-server-state";
 import { useLiveScore } from "./live-scores";
 import { formatYear, playerRange, scoreColor } from "@/lib/format";
 import type { Game } from "@/lib/types";
@@ -330,7 +331,7 @@ function LandingGameCard({
   index: number;
   reduced: boolean | null;
 }) {
-  const [game, setGame] = useState(initial);
+  const [game, setGame] = useServerState(initial);
   const live = useLiveScore(game.slug);
   const shown = live ? { ...game, ...live } : game;
 

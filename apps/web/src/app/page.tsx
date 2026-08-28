@@ -7,7 +7,7 @@ import type { GamePage, Post } from "@/lib/types";
 export default async function HomePage() {
   const [top, feed] = await Promise.all([
     apiGet<GamePage>("/games?sort=score&limit=4", { authenticated: true }),
-    apiGet<{ posts: Post[] }>("/posts?limit=4"),
+    apiGet<{ posts: Post[] }>("/posts?limit=4", { revalidate: 60 }),
   ]);
 
   return (

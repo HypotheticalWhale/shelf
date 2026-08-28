@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { motion } from "motion/react";
+import { useServerState } from "@/lib/use-server-state";
 import { useLiveScore } from "./live-scores";
 import { GameCover } from "./game-cover";
 import { RatingPips } from "./rating-pips";
@@ -18,7 +18,7 @@ import type { Game } from "@/lib/types";
  * Here it costs one click, from wherever you happen to be looking.
  */
 export function GameCard({ game: initial, index = 0 }: { game: Game; index?: number }) {
-  const [game, setGame] = useState(initial);
+  const [game, setGame] = useServerState(initial);
 
   // Somebody else rating this game updates the card in place. Only the
   // aggregates follow the stream — a viewer's own rating is theirs alone.

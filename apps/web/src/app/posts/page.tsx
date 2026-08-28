@@ -5,7 +5,7 @@ import type { Post } from "@/lib/types";
 export const metadata = { title: "Reading" };
 
 export default async function PostsPage() {
-  const { posts } = await apiGet<{ posts: Post[] }>("/posts?limit=40");
+  const { posts } = await apiGet<{ posts: Post[] }>("/posts?limit=40", { revalidate: 60 });
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
