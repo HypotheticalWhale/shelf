@@ -28,7 +28,13 @@ const VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
  * the API's response, which returns the recomputed aggregate in the same round
  * trip. If the write fails the rating snaps back and says why.
  */
-export function RatingPips({ slug, viewerRating, size = "sm", onRated, className }: Props) {
+export function RatingPips({
+  slug,
+  viewerRating,
+  size = "sm",
+  onRated,
+  className,
+}: Props) {
   const { isSignedIn, getToken } = useAuth();
   const [rating, setRating] = useState<number | null>(viewerRating);
   const [preview, setPreview] = useState<number | null>(null);
@@ -59,12 +65,14 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
         onRated?.(game);
       } catch (err) {
         setRating(previous);
-        setError(err instanceof Error ? err.message : "Could not save that rating");
+        setError(
+          err instanceof Error ? err.message : "Could not save that rating"
+        );
       } finally {
         setBusy(false);
       }
     },
-    [getToken, onRated, rating, slug],
+    [getToken, onRated, rating, slug]
   );
 
   const onKeyDown = (event: React.KeyboardEvent) => {
@@ -99,10 +107,7 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
           setPreview(null);
         }
       }}
-      className={cn(
-        "flex items-end rounded-md",
-        busy && "opacity-70",
-      )}
+      className={cn("flex items-end rounded-md", busy && "opacity-70")}
     >
       {VALUES.map((value) => {
         const filled = shown !== null && value <= shown;
@@ -125,7 +130,7 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
             // area clears the 24px minimum while the bar stays thin.
             className={cn(
               "group/pip flex items-end justify-center bg-transparent px-[3px] py-2.5 -my-2.5 cursor-pointer",
-              tall ? "w-[22px]" : "w-4",
+              tall ? "w-[22px]" : "w-4"
             )}
           >
             <motion.span
@@ -140,7 +145,7 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
               className={cn(
                 "block w-full rounded-cube transition-colors",
                 tall ? "h-9" : "h-6",
-                !filled && "bg-felt-600 group-hover/pip:bg-rule",
+                !filled && "bg-felt-600 group-hover/pip:bg-rule"
               )}
             />
           </button>
@@ -151,7 +156,7 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
         className={cn(
           "ml-2 font-mono tabular-nums leading-none self-center",
           tall ? "text-lg" : "text-xs",
-          shown === null ? "text-chalk-faint" : "text-chalk",
+          shown === null ? "text-chalk-faint" : "text-chalk"
         )}
       >
         {shown === null ? (tall ? "rate it" : "—") : shown.toFixed(0)}
@@ -167,20 +172,28 @@ export function RatingPips({ slug, viewerRating, size = "sm", onRated, className
             className="group/pips text-left"
             aria-label="Sign in to rate this game"
           >
+            <span
+              className={cn(
+                "self-center text-chalk-faint group-hover/pips:text-chalk transition-colors",
+                tall ? "text-sm" : "text-xs"
+              )}
+            >
+              Your rating
+            </span>
             <div className="flex items-end gap-[3px] pointer-events-none">
               {VALUES.map((value) => (
                 <span
                   key={value}
                   className={cn(
                     "rounded-cube bg-felt-600 group-hover/pips:bg-rule transition-colors",
-                    tall ? "w-[16px] h-9 mx-[3px]" : "w-2.5 h-6 mx-[3px]",
+                    tall ? "w-[16px] h-9 mx-[3px]" : "w-2.5 h-6 mx-[3px]"
                   )}
                 />
               ))}
               <span
                 className={cn(
                   "ml-2 self-center text-chalk-faint group-hover/pips:text-chalk transition-colors",
-                  tall ? "text-sm" : "text-xs",
+                  tall ? "text-sm" : "text-xs"
                 )}
               >
                 sign in to rate
