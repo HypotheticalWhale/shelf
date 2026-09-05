@@ -109,6 +109,14 @@ export function RatingPips({
       }}
       className={cn("flex items-end rounded-md", busy && "opacity-70")}
     >
+      <span
+        className={cn(
+          "self-center text-chalk-faint group-hover/pips:text-chalk transition-colors",
+          tall ? "text-sm" : "text-xs"
+        )}
+      >
+        Your rating
+      </span>
       {VALUES.map((value) => {
         const filled = shown !== null && value <= shown;
         const isChosen = rating === value;
