@@ -107,67 +107,71 @@ export function RatingPips({
           setPreview(null);
         }
       }}
-      className={cn("flex items-end rounded-md", busy && "opacity-70")}
+      className={cn(
+        "flex flex-col items-start gap-1 rounded-md",
+        busy && "opacity-70"
+      )}
     >
       <span
         className={cn(
-          "self-center text-chalk-faint group-hover/pips:text-chalk transition-colors",
+          "text-chalk-faint group-hover/pips:text-chalk transition-colors",
           tall ? "text-sm" : "text-xs"
         )}
       >
         Your rating
       </span>
-      {VALUES.map((value) => {
-        const filled = shown !== null && value <= shown;
-        const isChosen = rating === value;
-        return (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={isChosen}
-            aria-label={`${value} out of 10`}
-            disabled={busy}
-            onMouseEnter={() => setPreview(value)}
-            onFocus={() => setPreview(value)}
-            onClick={() => void commit(isChosen ? null : value)}
-            // The visible pip is deliberately slim, but a 10px target is far
-            // too small to hit: a near miss lands on the card behind it and
-            // opens the game instead of rating it, which reads as the control
-            // being broken. The button carries transparent padding so the tap
-            // area clears the 24px minimum while the bar stays thin.
-            className={cn(
-              "group/pip flex items-end justify-center bg-transparent px-[3px] py-2.5 -my-2.5 cursor-pointer",
-              tall ? "w-[22px]" : "w-4"
-            )}
-          >
-            <motion.span
-              aria-hidden
-              animate={{ scaleY: isChosen ? 1 : filled ? 0.88 : 0.66 }}
-              whileTap={{ scaleY: 0.8 }}
-              transition={{ type: "spring", stiffness: 520, damping: 24 }}
-              style={{
-                originY: 1,
-                background: filled ? scoreColor(shown ?? value) : undefined,
-              }}
+      <span className="flex items-end">
+        {VALUES.map((value) => {
+          const filled = shown !== null && value <= shown;
+          const isChosen = rating === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={isChosen}
+              aria-label={`${value} out of 10`}
+              disabled={busy}
+              onMouseEnter={() => setPreview(value)}
+              onFocus={() => setPreview(value)}
+              onClick={() => void commit(isChosen ? null : value)}
+              // The visible pip is deliberately slim, but a 10px target is far
+              // too small to hit: a near miss lands on the card behind it and
+              // opens the game instead of rating it, which reads as the control
+              // being broken. The button carries transparent padding so the tap
+              // area clears the 24px minimum while the bar stays thin.
               className={cn(
-                "block w-full rounded-cube transition-colors",
-                tall ? "h-9" : "h-6",
-                !filled && "bg-felt-600 group-hover/pip:bg-rule"
+                "group/pip flex items-end justify-center bg-transparent px-[3px] py-2.5 -my-2.5 cursor-pointer",
+                tall ? "w-[22px]" : "w-4"
               )}
-            />
-          </button>
-        );
-      })}
-
-      <span
-        className={cn(
-          "ml-2 font-mono tabular-nums leading-none self-center",
-          tall ? "text-lg" : "text-xs",
-          shown === null ? "text-chalk-faint" : "text-chalk"
-        )}
-      >
-        {shown === null ? (tall ? "rate it" : "—") : shown.toFixed(0)}
+            >
+              <motion.span
+                aria-hidden
+                animate={{ scaleY: isChosen ? 1 : filled ? 0.88 : 0.66 }}
+                whileTap={{ scaleY: 0.8 }}
+                transition={{ type: "spring", stiffness: 520, damping: 24 }}
+                style={{
+                  originY: 1,
+                  background: filled ? scoreColor(shown ?? value) : undefined,
+                }}
+                className={cn(
+                  "block w-full rounded-cube transition-colors",
+                  tall ? "h-9" : "h-6",
+                  !filled && "bg-felt-600 group-hover/pip:bg-rule"
+                )}
+              />
+            </button>
+          );
+        })}
+        <span
+          className={cn(
+            "ml-2 font-mono tabular-nums leading-none self-center",
+            tall ? "text-lg" : "text-xs",
+            shown === null ? "text-chalk-faint" : "text-chalk"
+          )}
+        >
+          {shown === null ? (tall ? "rate it" : "—") : shown.toFixed(0)}
+        </span>
       </span>
     </div>
   );
@@ -177,18 +181,18 @@ export function RatingPips({
       <div className={className}>
         <SignInButton mode="modal">
           <button
-            className="group/pips text-left"
+            className="group/pips flex flex-col items-start gap-1 text-left"
             aria-label="Sign in to rate this game"
           >
             <span
               className={cn(
-                "self-center text-chalk-faint group-hover/pips:text-chalk transition-colors",
+                "text-chalk-faint group-hover/pips:text-chalk transition-colors",
                 tall ? "text-sm" : "text-xs"
               )}
             >
               Your rating
             </span>
-            <div className="flex items-end gap-[3px] pointer-events-none">
+            <div className="flex items-end pointer-events-none">
               {VALUES.map((value) => (
                 <span
                   key={value}
